@@ -16,12 +16,14 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=unum
 PKG_VERSION:=2018.1.0
-PKG_RELEASE:=1
 PKG_LICENSE:=Apache-2.0
 
-PKG_SOURCE:=v$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=https://github.com/MinimSecure/unum-sdk/archive/
+PKG_SOURCE_PROTO:=git
+PKG_SOURCE_URL:=https://github.com/MinimSecure/unum-sdk
+PKG_SOURCE_VERSION:=v$(PKG_VERSION)
 PKG_MAINTAINER:=Minim Labs <labs@minim.co>
+
+PKG_RELEASE:=1
 
 include $(INCLUDE_DIR)/package.mk
 
