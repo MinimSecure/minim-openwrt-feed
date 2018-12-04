@@ -19,7 +19,8 @@ PKG_VERSION:=2018.1.0
 PKG_RELEASE:=1
 PKG_LICENSE:=Apache-2.0
 
-PKG_SOURCE_URL:=https://github.com/MinimSecure/unum-sdk/archive/v$(PKG_VERSION).tar.gz
+PKG_SOURCE:=v$(PKG_VERSION).tar.gz
+PKG_SOURCE_URL:=https://github.com/MinimSecure/unum-sdk/archive/
 PKG_MAINTAINER:=Minim Labs <labs@minim.co>
 
 include $(INCLUDE_DIR)/package.mk
