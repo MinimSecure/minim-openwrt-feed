@@ -60,7 +60,7 @@ AGENT_MODEL_ID=linux_generic
 AGENT_ETC_DIR=/etc/unum
 
 # Agent version
-AGENT_VERSION_NUMBER="$PKG_VERSION"
+AGENT_VERSION_NUMBER="$(PKG_VERSION)"
 
 define Build/Prepare
 	$(PKG_UNPACK)
