@@ -25,21 +25,12 @@ STOP=35
 
 # Agent config folder on the target
 AGENT_ETC_DIR="/etc/unum"
-# Agent system config on the target
-AGENT_SYSTEM_CONF="$AGENT_ETC_DIR/system.conf"
-# Agent user config on the target
-AGENT_USER_CONF="$AGENT_ETC_DIR/user.conf"
-
-# Include system config file
-source "$AGENT_SYSTEM_CONF"
-# Include user config file
-[ ! -e "$AGENT_USER_CONF" ] || source "$AGENT_USER_CONF"
 
 # Include helper functions
 source "$AGENT_ETC_DIR/unum.common"
 
 # The command to run
-CMD="/usr/bin/unum -d -c \"$UNUM_CA_FILE\""
+CMD="/usr/bin/unum --daemonize --cfg-file /etc/unum/config.json"
 
 # Report agent status
 status() {
@@ -60,7 +51,7 @@ stop() {
 start() {
   stop
   prep_startup
-  eval_nicely $CMD
+  $CMD
 }
 
 # Restart the agent

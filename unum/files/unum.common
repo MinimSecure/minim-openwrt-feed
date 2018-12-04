@@ -58,12 +58,9 @@ prep_startup() {
   if [ -e /www ] && [ ! -e /www/provision.json ]; then
     ln -sf /tmp/provision_info.json /www/provision.json
   fi
-}
-
-eval_nicely() {
-  if [ "$UNUM_NICENESS" == "" ]; then
-    eval "$@"
-  else
-    eval "nice -n$UNUM_NICENESS $@"
-  fi
+  # Generate agent JSON configuration
+  echo '{' > /etc/unum/config.json
+  echo '  "lan-if": "'$(uci get network.lan.ifname)'",' >> /etc/unum/config.json
+  echo '  "wan-if": "'$(uci get network.wan.ifname)'"' >> /etc/unum/config.json
+  echo '}' > /etc/unum/config.json
 }

@@ -14,7 +14,7 @@
 
 # Platform makefile for unum agent executable build
 
-HARDWARE := linux_generic
+HARDWARE := $(or $(MODEL),linux_generic)
 
 # Generic libs
 LDFLAGS += -lm -lrt
