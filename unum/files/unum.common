@@ -62,5 +62,5 @@ prep_startup() {
   echo '{' > /etc/unum/config.json
   echo '  "lan-if": "'$(uci get network.lan.ifname)'",' >> /etc/unum/config.json
   echo '  "wan-if": "'$(uci get network.wan.ifname)'"' >> /etc/unum/config.json
-  echo '}' > /etc/unum/config.json
+  echo '}' >> /etc/unum/config.json
 }

@@ -20,7 +20,8 @@ PKG_LICENSE:=Apache-2.0
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/MinimSecure/unum-sdk
-PKG_SOURCE_VERSION:=v$(PKG_VERSION)
+#PKG_SOURCE_VERSION:=v$(PKG_VERSION)
+PKG_SOURCE_VERSION:=master
 PKG_MAINTAINER:=Minim Labs <labs@minim.co>
 
 PKG_RELEASE:=1
@@ -56,6 +57,9 @@ MAKE_PATH:=src/unum
 # OpenWrt builds use linux_generic by default
 AGENT_MODEL_ID=linux_generic
 
+# Trusted CA list location on the target
+AGENT_TRUSTED_CA_LIST=/etc/ssl/certs/unum-ca-certificates.crt
+
 # Agent config folder on the target
 AGENT_ETC_DIR=/etc/unum
 
@@ -77,7 +81,7 @@ define Build/Compile
 	$(call Build/Compile/Default,\
 	  AGENT_VERSION=$(patsubst "%",%,$(AGENT_VERSION_NUMBER))\
 	  MODEL=$(AGENT_MODEL_ID) TARGET_OBJ="$(PKG_BUILD_DIR)/src")\
-	  INSTALL_EXTRAS=no
+	  INSTALL_EXTRAS= UNUM_DEBUG=1
 endef
 
 define Package/unum/install
@@ -86,6 +90,9 @@ define Package/unum/install
 	$(INSTALL_BIN) $(PKG_BUILD_DIR_UNUM)/unum $(1)/usr/bin/
 	# Agent configuration folder
 	$(INSTALL_DIR) $(1)$(AGENT_ETC_DIR)
+	# Trusted certificates (install our own CA list)
+	$(INSTALL_DIR) $(1)/etc/ssl/certs
+	cat $(PKG_BUILD_DIR_FILES)/ca/*.pem > $(1)$(AGENT_TRUSTED_CA_LIST)
 	# Agent init files
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) $(PKG_BUILD_DIR_FILES)/linux_generic/unum.init $(1)/etc/init.d/unum

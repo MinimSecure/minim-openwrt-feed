@@ -30,7 +30,7 @@ AGENT_ETC_DIR="/etc/unum"
 source "$AGENT_ETC_DIR/unum.common"
 
 # The command to run
-CMD="/usr/bin/unum --daemonize --cfg-file /etc/unum/config.json"
+CMD="/usr/bin/unum --daemonize --trusted-ca /etc/ssl/certs/unum-ca-certificates.crt --cfg-file /etc/unum/config.json"
 
 # Report agent status
 status() {
