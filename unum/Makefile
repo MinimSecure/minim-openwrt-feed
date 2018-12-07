@@ -15,13 +15,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=unum
-PKG_VERSION:=2018.1.0
+PKG_VERSION:=2018.1.0-1
 PKG_LICENSE:=Apache-2.0
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/MinimSecure/unum-sdk
-#PKG_SOURCE_VERSION:=v$(PKG_VERSION)
-PKG_SOURCE_VERSION:=master
+PKG_SOURCE_VERSION:=169fa5cc1445dde84566974822a669577208d9b8
 PKG_MAINTAINER:=Minim Labs <labs@minim.co>
 
 PKG_RELEASE:=1
@@ -31,7 +30,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/unum
 	SECTION:=net
 	CATEGORY:=Network
-	TITLE:=Unum agent
+	TITLE:=Unum network management and monitoring agent
 	URL:=https://www.minim.co
 	MAINTAINER:=$(PKG_MAINTAINER)
 	VERSION:=$(PKG_VERSION)
