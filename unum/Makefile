@@ -15,7 +15,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=unum
-PKG_VERSION:=2018.1.0-1
+PKG_VERSION:=2018.1.0
 PKG_LICENSE:=Apache-2.0
 
 PKG_SOURCE_PROTO:=git
@@ -80,7 +80,7 @@ define Build/Compile
 	$(call Build/Compile/Default,\
 	  AGENT_VERSION=$(patsubst "%",%,$(AGENT_VERSION_NUMBER))\
 	  MODEL=$(AGENT_MODEL_ID) TARGET_OBJ="$(PKG_BUILD_DIR)/src")\
-	  INSTALL_EXTRAS= UNUM_DEBUG=1
+	  INSTALL_EXTRAS=0 UNUM_DEBUG=1
 endef
 
 define Package/unum/install
