@@ -71,6 +71,7 @@ define Build/Prepare
 	mkdir -p $(PKG_BUILD_DIR_FILES)/linux_generic
 	cp -f --remove-destination files/unum.common $(PKG_BUILD_DIR_FILES)/linux_generic/unum.common
 	cp -f --remove-destination files/unum.init $(PKG_BUILD_DIR_FILES)/linux_generic/unum.init
+	cp -f --remove-destination files/unum.conf $(PKG_BUILD_DIR_FILES)/linux_generic/unum.conf
 endef
 
 define Build/Configure
@@ -96,6 +97,8 @@ define Package/unum/install
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) $(PKG_BUILD_DIR_FILES)/linux_generic/unum.init $(1)/etc/init.d/unum
 	$(INSTALL_DATA) $(PKG_BUILD_DIR_FILES)/linux_generic/unum.common $(1)$(AGENT_ETC_DIR)/unum.common
+	$(INSTALL_DIR) $(1)/etc/config
+	$(INSTALL_CONF) $(PKG_BUILD_DIR_FILES)/linux_generic/unum.conf $(1)/etc/config/unum
 	# Agent files to keep through the firmware upgrade
 	$(INSTALL_DIR) $(1)/lib/upgrade/keep.d
 	echo "/etc/unum/unum.pem" > $(1)/lib/upgrade/keep.d/unum.upgrade

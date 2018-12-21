@@ -58,9 +58,20 @@ prep_startup() {
   if [ -e /www ] && [ ! -e /www/provision.json ]; then
     ln -sf /tmp/provision_info.json /www/provision.json
   fi
+  LANIF=$(uci get network.lan.ifname)
+  LANMAC=$(ifconfig $LANIF | awk '/HWaddr/ { print $5 }')
+  LANIFS=$(ifconfig | awk '/'$LANIF'/ { next }; /'$LANMAC'/ { print $1 }')
+  uci del_list unum.@agent[0].lan-if
+  for IFNAME in $LANIFS; do
+    uci add_list unum.@agent[0].lan-if=$IFNAME
+  done
+  uci add_list unum.@agent[0].lan-if=$LANIF
+  WANIF=$(uci get network.wan.ifname)
+  uci set unum.@agent[0].wan-if=$WANIF
+  uci commit unum
   # Generate agent JSON configuration
   echo '{' > /etc/unum/config.json
-  echo '  "lan-if": "'$(uci get network.lan.ifname)'",' >> /etc/unum/config.json
-  echo '  "wan-if": "'$(uci get network.wan.ifname)'"' >> /etc/unum/config.json
+  echo '  "lan-if": "'$(uci get unum.@agent[0].lan-if)'",' >> /etc/unum/config.json
+  echo '  "wan-if": "'$(uci get unum.@agent[0].wan-if)'"' >> /etc/unum/config.json
   echo '}' >> /etc/unum/config.json
 }
