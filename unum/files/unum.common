@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+UNUM_PID_FILE_PREFIX=/var/run
 
 # Kills unum process instance using its PID file
 kill_unum() {
@@ -58,9 +59,20 @@ prep_startup() {
   if [ -e /www ] && [ ! -e /www/provision.json ]; then
     ln -sf /tmp/provision_info.json /www/provision.json
   fi
+  LANIF=$(uci get network.lan.ifname)
+  LANMAC=$(ifconfig $LANIF | awk '/HWaddr/ { print $5 }')
+  LANIFS=$(ifconfig | awk '/'$LANIF'/ { next }; /'$LANMAC'/ { print $1 }')
+  uci del unum.@agent[0].lan_if
+  for IFNAME in $LANIFS; do
+    uci add_list unum.@agent[0].lan_if=$IFNAME
+  done
+  uci add_list unum.@agent[0].lan_if=$LANIF
+  WANIF=$(uci get network.wan.ifname)
+  uci set unum.@agent[0].wan_if=$WANIF
+  uci commit unum
   # Generate agent JSON configuration
   echo '{' > /etc/unum/config.json
-  echo '  "lan-if": "'$(uci get network.lan.ifname)'",' >> /etc/unum/config.json
-  echo '  "wan-if": "'$(uci get network.wan.ifname)'"' >> /etc/unum/config.json
+  echo '  "lan-if": "'$(uci get unum.@agent[0].lan_if)'",' >> /etc/unum/config.json
+  echo '  "wan-if": "'$(uci get unum.@agent[0].wan_if)'"' >> /etc/unum/config.json
   echo '}' >> /etc/unum/config.json
 }
