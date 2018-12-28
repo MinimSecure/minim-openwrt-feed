@@ -62,7 +62,7 @@ prep_startup() {
   LANIF=$(uci get network.lan.ifname)
   LANMAC=$(ifconfig $LANIF | awk '/HWaddr/ { print $5 }')
   LANIFS=$(ifconfig | awk '/'$LANIF'/ { next }; /'$LANMAC'/ { print $1 }')
-  uci del_list unum.@agent[0].lan_if
+  uci del unum.@agent[0].lan_if
   for IFNAME in $LANIFS; do
     uci add_list unum.@agent[0].lan_if=$IFNAME
   done
