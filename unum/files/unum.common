@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-UNUM_PID_FILE_PREFIX=/var/run
+UNUM_PID_FILE_PREFIX=/var/run/unum
 
 # Kills unum process instance using its PID file
 kill_unum() {
@@ -59,20 +59,34 @@ prep_startup() {
   if [ -e /www ] && [ ! -e /www/provision.json ]; then
     ln -sf /tmp/provision_info.json /www/provision.json
   fi
-  LANIF=$(uci get network.lan.ifname)
-  LANMAC=$(ifconfig $LANIF | awk '/HWaddr/ { print $5 }')
-  LANIFS=$(ifconfig | awk '/'$LANIF'/ { next }; /'$LANMAC'/ { print $1 }')
-  uci del unum.@agent[0].lan_if
-  for IFNAME in $LANIFS; do
-    uci add_list unum.@agent[0].lan_if=$IFNAME
-  done
-  uci add_list unum.@agent[0].lan_if=$LANIF
   WANIF=$(uci get network.wan.ifname)
+  LANIF=$(uci get network.lan.ifname)
+  LANIP=$(ifconfig "$LANIF" | awk '/inet addr/ { print substr($2, 6) }')
+  if [ -z "$LANIP" ]; then
+    LANMAC=$(ifconfig $LANIF | awk '/HWaddr/ { print $5 }')
+    LANIFS=$(ifconfig | awk '/'$LANIF'/ { next }; /'$WANIF'/ { next }; /'$LANMAC'/ { print $1 }')
+    LANIF=
+    for IFNAME in $LANIFS; do
+      LANIP=$(ifconfig "$IFNAME" | awk '/inet addr/ { print substr($2, 6) }')
+      if [ ! -z "$LANIP" ]; then
+        LANIF="$IFNAME"
+        break
+      fi
+    done
+  fi
+  if [ -z "$LANIF" ]; then
+    echo "warning: unable to determine LAN network interface name"
+  fi
   uci set unum.@agent[0].wan_if=$WANIF
+  uci set unum.@agent[0].lan_if=$LANIF
   uci commit unum
+  cp -f /etc/unum/config.json /tmp/config.json.orig
   # Generate agent JSON configuration
-  echo '{' > /etc/unum/config.json
-  echo '  "lan-if": "'$(uci get unum.@agent[0].lan_if)'",' >> /etc/unum/config.json
-  echo '  "wan-if": "'$(uci get unum.@agent[0].wan_if)'"' >> /etc/unum/config.json
-  echo '}' >> /etc/unum/config.json
+  if [ -e /etc/unum/config.json ]; then
+    sed -i -E -e 's/"lan-if":[ ]?".*"/"lan-if": "'$LANIF'"/' \
+              -e 's/"wan-if":[ ]?".*"/"wan-if": "'$WANIF'"/' \
+           /etc/unum/config.json
+  else
+    echo '{"lan-if":"'$LANIF'","wan-if":"'$WANIF'"}' > /etc/unum/config.json
+  fi
 }

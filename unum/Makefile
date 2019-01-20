@@ -90,6 +90,7 @@ define Package/unum/install
 	$(INSTALL_BIN) $(PKG_BUILD_DIR_UNUM)/unum $(1)/usr/bin/
 	# Agent configuration folder
 	$(INSTALL_DIR) $(1)$(AGENT_ETC_DIR)
+	$(INSTALL_DATA) $(PKG_BUILD_DIR_FILES)/linux_generic/etc/opt/unum/config.json $(1)$(AGENT_ETC_DIR)/config.json
 	# Trusted certificates (install our own CA list)
 	$(INSTALL_DIR) $(1)/etc/ssl/certs
 	cat $(PKG_BUILD_DIR_FILES)/ca/*.pem > $(1)$(AGENT_TRUSTED_CA_LIST)
