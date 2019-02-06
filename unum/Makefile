@@ -15,12 +15,14 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=unum
-PKG_VERSION:=2019.1.1
+PKG_VERSION:=2019.1.1-snapshot
 PKG_LICENSE:=Apache-2.0
 
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_URL:=https://github.com/tyler-sommer/unum-sdk
 PKG_SOURCE_VERSION:=cab45355881386c559a2789efcfbdbcbfe12db59
+PKG_SOURCE_URL:=https://github.com/MinimSecure/unum-sdk
+PKG_SOURCE_SUBDIR:=unum-$(PKG_VERSION)
+PKG_SOURCE:=$(PKG_SOURCE_VERSION).tar.gz
 PKG_MAINTAINER:=Minim Labs <labs@minim.co>
 
 PKG_RELEASE:=1
@@ -65,18 +67,13 @@ AGENT_ETC_DIR=/etc/unum
 # Agent version
 AGENT_VERSION_NUMBER="$(PKG_VERSION)"
 
-define Build/Prepare
-	$(PKG_UNPACK)
-endef
-
 define Build/Configure
 endef
 
 define Build/Compile
 	$(call Build/Compile/Default,\
 	  AGENT_VERSION=$(patsubst "%",%,$(AGENT_VERSION_NUMBER))\
-	  MODEL=$(AGENT_MODEL_ID) TARGET_OBJ="$(PKG_BUILD_DIR)/src")\
-	  INSTALL_EXTRAS=0 UNUM_DEBUG=1
+	  MODEL=$(AGENT_MODEL_ID) TARGET_OBJ="$(PKG_BUILD_DIR)/src")
 endef
 
 define Package/unum/install
