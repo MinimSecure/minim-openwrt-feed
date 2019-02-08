@@ -15,7 +15,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=unum
-PKG_VERSION:=2019.1.1-snapshot
+PKG_VERSION:=2019.2.0-snapshot
 PKG_LICENSE:=Apache-2.0
 
 PKG_SOURCE_PROTO:=git
