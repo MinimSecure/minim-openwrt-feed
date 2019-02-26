@@ -15,12 +15,14 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=unum
-PKG_VERSION:=2019.1.0
+PKG_VERSION:=2019.2.0-snapshot
 PKG_LICENSE:=Apache-2.0
 
 PKG_SOURCE_PROTO:=git
+PKG_SOURCE_VERSION:=0f533d8e9ca154bf9ac6e3e1e78a984f5de266f3
 PKG_SOURCE_URL:=https://github.com/MinimSecure/unum-sdk
-PKG_SOURCE_VERSION:=v2019.1.0
+PKG_SOURCE_SUBDIR:=unum-$(PKG_VERSION)
+PKG_SOURCE:=$(PKG_SOURCE_VERSION).tar.gz
 PKG_MAINTAINER:=Minim Labs <labs@minim.co>
 
 PKG_RELEASE:=1
@@ -54,7 +56,7 @@ MAKE_PATH:=src/unum
 
 # Platform (ie. MODEL) used to build the agent
 # OpenWrt builds use linux_generic by default
-AGENT_MODEL_ID=linux_generic
+AGENT_MODEL_ID=openwrt_generic
 
 # Trusted CA list location on the target
 AGENT_TRUSTED_CA_LIST=/etc/ssl/certs/unum-ca-certificates.crt
@@ -65,23 +67,13 @@ AGENT_ETC_DIR=/etc/unum
 # Agent version
 AGENT_VERSION_NUMBER="$(PKG_VERSION)"
 
-define Build/Prepare
-	$(PKG_UNPACK)
-	cp -f --remove-destination files/unum-linux_generic.mk $(PKG_BUILD_DIR)/src/unum/unum-linux_generic.mk
-	mkdir -p $(PKG_BUILD_DIR_FILES)/linux_generic
-	cp -f --remove-destination files/unum.common $(PKG_BUILD_DIR_FILES)/linux_generic/unum.common
-	cp -f --remove-destination files/unum.init $(PKG_BUILD_DIR_FILES)/linux_generic/unum.init
-	cp -f --remove-destination files/unum.conf $(PKG_BUILD_DIR_FILES)/linux_generic/unum.conf
-endef
-
 define Build/Configure
 endef
 
 define Build/Compile
 	$(call Build/Compile/Default,\
 	  AGENT_VERSION=$(patsubst "%",%,$(AGENT_VERSION_NUMBER))\
-	  MODEL=$(AGENT_MODEL_ID) TARGET_OBJ="$(PKG_BUILD_DIR)/src")\
-	  INSTALL_EXTRAS=0 UNUM_DEBUG=1
+	  MODEL=$(AGENT_MODEL_ID) TARGET_OBJ="$(PKG_BUILD_DIR)/src")
 endef
 
 define Package/unum/install
@@ -90,16 +82,16 @@ define Package/unum/install
 	$(INSTALL_BIN) $(PKG_BUILD_DIR_UNUM)/unum $(1)/usr/bin/
 	# Agent configuration folder
 	$(INSTALL_DIR) $(1)$(AGENT_ETC_DIR)
-	$(INSTALL_DATA) $(PKG_BUILD_DIR_FILES)/linux_generic/etc/opt/unum/config.json $(1)$(AGENT_ETC_DIR)/config.json
+	$(INSTALL_DATA) $(PKG_BUILD_DIR_FILES)/linux_generic/etc/config.json $(1)$(AGENT_ETC_DIR)/config.json
 	# Trusted certificates (install our own CA list)
 	$(INSTALL_DIR) $(1)/etc/ssl/certs
 	cat $(PKG_BUILD_DIR_FILES)/ca/*.pem > $(1)$(AGENT_TRUSTED_CA_LIST)
 	# Agent init files
 	$(INSTALL_DIR) $(1)/etc/init.d
-	$(INSTALL_BIN) $(PKG_BUILD_DIR_FILES)/linux_generic/unum.init $(1)/etc/init.d/unum
-	$(INSTALL_DATA) $(PKG_BUILD_DIR_FILES)/linux_generic/unum.common $(1)$(AGENT_ETC_DIR)/unum.common
+	$(INSTALL_BIN) $(PKG_BUILD_DIR_FILES)/openwrt_generic/etc/unum.init $(1)/etc/init.d/unum
+	$(INSTALL_DATA) $(PKG_BUILD_DIR_FILES)/openwrt_generic/etc/unum.common $(1)$(AGENT_ETC_DIR)/unum.common
 	$(INSTALL_DIR) $(1)/etc/config
-	$(INSTALL_CONF) $(PKG_BUILD_DIR_FILES)/linux_generic/unum.conf $(1)/etc/config/unum
+	$(INSTALL_CONF) $(PKG_BUILD_DIR_FILES)/openwrt_generic/etc/config/unum $(1)/etc/config/unum
 	# Agent files to keep through the firmware upgrade
 	$(INSTALL_DIR) $(1)/lib/upgrade/keep.d
 	echo "/etc/unum/unum.pem" > $(1)/lib/upgrade/keep.d/unum.upgrade
