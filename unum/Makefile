@@ -73,7 +73,8 @@ endef
 define Build/Compile
 	$(call Build/Compile/Default,\
 	  AGENT_VERSION=$(patsubst "%",%,$(AGENT_VERSION_NUMBER))\
-	  MODEL=$(AGENT_MODEL_ID) TARGET_OBJ="$(PKG_BUILD_DIR)/src")
+	  MODEL=$(AGENT_MODEL_ID) TARGET_OBJ="$(PKG_BUILD_DIR)/src"\
+	  UNUM_DISABLE_TRACER=1)
 endef
 
 define Package/unum/install
@@ -90,8 +91,6 @@ define Package/unum/install
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) $(PKG_BUILD_DIR_FILES)/openwrt_generic/etc/unum.init $(1)/etc/init.d/unum
 	$(INSTALL_DATA) $(PKG_BUILD_DIR_FILES)/openwrt_generic/etc/unum.common $(1)$(AGENT_ETC_DIR)/unum.common
-	$(INSTALL_DIR) $(1)/etc/config
-	$(INSTALL_CONF) $(PKG_BUILD_DIR_FILES)/openwrt_generic/etc/config/unum $(1)/etc/config/unum
 	# Agent files to keep through the firmware upgrade
 	$(INSTALL_DIR) $(1)/lib/upgrade/keep.d
 	echo "/etc/unum/unum.pem" > $(1)/lib/upgrade/keep.d/unum.upgrade
