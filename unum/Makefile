@@ -19,7 +19,7 @@ PKG_VERSION:=2019.2.0-snapshot
 PKG_LICENSE:=Apache-2.0
 
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_VERSION:=0f533d8e9ca154bf9ac6e3e1e78a984f5de266f3
+PKG_SOURCE_VERSION:=e56a8f9a997f743bcef629e7d977c24dbbc7ec15
 PKG_SOURCE_URL:=https://github.com/MinimSecure/unum-sdk
 PKG_SOURCE_SUBDIR:=unum-$(PKG_VERSION)
 PKG_SOURCE:=$(PKG_SOURCE_VERSION).tar.gz
@@ -73,7 +73,8 @@ endef
 define Build/Compile
 	$(call Build/Compile/Default,\
 	  AGENT_VERSION=$(patsubst "%",%,$(AGENT_VERSION_NUMBER))\
-	  MODEL=$(AGENT_MODEL_ID) TARGET_OBJ="$(PKG_BUILD_DIR)/src")
+	  MODEL=$(AGENT_MODEL_ID) TARGET_OBJ="$(PKG_BUILD_DIR)/src"\
+	  UNUM_DISABLE_TRACER=1)
 endef
 
 define Package/unum/install
@@ -90,8 +91,6 @@ define Package/unum/install
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) $(PKG_BUILD_DIR_FILES)/openwrt_generic/etc/unum.init $(1)/etc/init.d/unum
 	$(INSTALL_DATA) $(PKG_BUILD_DIR_FILES)/openwrt_generic/etc/unum.common $(1)$(AGENT_ETC_DIR)/unum.common
-	$(INSTALL_DIR) $(1)/etc/config
-	$(INSTALL_CONF) $(PKG_BUILD_DIR_FILES)/openwrt_generic/etc/config/unum $(1)/etc/config/unum
 	# Agent files to keep through the firmware upgrade
 	$(INSTALL_DIR) $(1)/lib/upgrade/keep.d
 	echo "/etc/unum/unum.pem" > $(1)/lib/upgrade/keep.d/unum.upgrade
