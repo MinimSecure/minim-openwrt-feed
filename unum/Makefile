@@ -93,7 +93,7 @@ define Package/unum/install
 	$(INSTALL_DATA) $(PKG_BUILD_DIR_FILES)/openwrt_generic/etc/unum.common $(1)$(AGENT_ETC_DIR)/unum.common
 
 	# Restart script
-	$(INSTALL_DATA) $(PKG_BUILD_DIR_FILES)/openwrt_generic/restart_config.sh $(1)$(AGENT_ETC_DIR)/restart_config.sh
+	$(INSTALL_DATA) $(PKG_BUILD_DIR_FILES)/openwrt_generic/restart_config.sh $(1)/usr/bin/restart_config.sh
 
 	# Agent files to keep through the firmware upgrade
 	$(INSTALL_DIR) $(1)/lib/upgrade/keep.d
