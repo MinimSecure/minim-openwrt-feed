@@ -1,0 +1,7 @@
+# this script updates the www template to add per device information for display on the landing page
+LANDING=/www/index.provisioned.html
+SERIAL=`cat /proc/environment/mfg_sn`
+MAC=`cat /proc/environment/ethaddr`
+VERSION=`grep VERSION= /etc/os-release | cut -d= -f2 | tr -d \"`
+sed -i -e "s/__SERIAL__/${SERIAL}/" -e "s/__MAC__/${MAC}/" -e "s/__VERSION__/${VERSION}/" ${LANDING}
+exit 0
