@@ -1,0 +1,58 @@
+# Disable luci in uhttpd config
+LUA_INSTALLED=`opkg list-installed lua | wc -l`
+
+# if lua is installed do nothing
+[ $LUA_INSTALLED -eq 1 ] && exit 0
+
+# lua is not installed so reconfigure uhttpd
+uci -q batch <<-EOF >/dev/null
+	delete uhttpd.main.lua_prefix
+	commit uhttpd
+EOF
+
+# restore ucitrack manually to enable clean apply of uci changes (MIN-11040)
+uci -q import <<-EOF >/dev/null
+    package ucitrack
+
+    config network
+        list affects 'dhcp'
+        list affects 'radvd'
+        option init 'network'
+
+    config wireless
+        list affects 'network'
+
+    config firewall
+        list affects 'qos'
+        list affects 'miniupnpd'
+        option init 'firewall'
+
+    config dhcp
+        list affects 'odhcpd'
+        option init 'dnsmasq'
+
+    config odhcpd
+        option init 'odhcpd'
+
+    config dropbear
+        option init 'dropbear'
+
+    config httpd
+        option init 'httpd'
+
+    config qos
+        option init 'qos'
+
+    config system
+        list affects 'dhcp'
+        option exec '/etc/init.d/log reload'
+        option init 'led'
+
+    config upnpd
+        option init 'miniupnpd'
+
+    config ntpclient
+        option init 'ntpclient'
+EOF
+exit 0
+ 
