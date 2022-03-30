@@ -46,7 +46,7 @@ copy the ipk onto your router and use `opkg install` to install it.
 [4]: https://github.com/MinimSecure/unum-sdk/blob/master/README-openwrt_generic.md
 [5]: https://github.com/MinimSecure/unum-sdk/wiki
 
-## WEB-RPC
+## web-rpc
 
 This package is a limited functionality replacement for https://openwrt.org/packages/pkgdata/luci-mod-rpc that removes the dependency on lua/luci.
 
