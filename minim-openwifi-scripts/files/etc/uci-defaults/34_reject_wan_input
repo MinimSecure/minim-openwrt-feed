@@ -1,0 +1,3 @@
+# by default, reject incoming connections to wan
+uci set firewall.@zone[1].input=REJECT
+uci commit firewall
