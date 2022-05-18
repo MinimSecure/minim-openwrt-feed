@@ -1,0 +1,21 @@
+#!/bin/sh /etc/rc.common
+
+# this can happen late
+START=99
+STOP=99
+
+boot() {
+	if [ -f /sys/kernel/debug/crashlog ] ; then
+            today=`date '+%Y_%m_%d__%H_%M_%S'`;
+            filename="/etc/config/crash/crashlog-$today.gz";
+            mkdir -p /etc/config/crash
+            cat /sys/kernel/debug/crashlog | gzip > $filename
+            logger -t crash-collector Saving kernel crash log $filename
+
+            # only keep the latest 5 logs
+            find /etc/config/crash -type f | xargs -x ls -t | tail -n +6 | xargs -r rm
+
+            # try to upload to s3
+            /sbin/upload_crash_to_s3.sh $filename &
+	fi
+}
