@@ -15,14 +15,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=unum
-PKG_VERSION:=2020.1.0
+PKG_VERSION:=v2
 PKG_LICENSE:=Apache-2.0
 
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_VERSION:=v2020.1.0
+PKG_SOURCE_VERSION:=2fe70bc92514aafc2194352ee88017a89c0c8236
+PKG_MIRROR_HASH:=a7618f5175b77ebd908e9691041f2ac24153c27e8097a2cfaa0eb814f059ec55
 PKG_SOURCE_URL:=https://github.com/MinimSecure/unum-sdk
-PKG_SOURCE_SUBDIR:=unum-$(PKG_VERSION)
-PKG_SOURCE:=$(PKG_SOURCE_VERSION).tar.gz
 PKG_MAINTAINER:=Minim Labs <labs@minim.co>
 
 PKG_RELEASE:=1
@@ -37,7 +36,7 @@ define Package/unum
 	MAINTAINER:=$(PKG_MAINTAINER)
 	VERSION:=$(PKG_VERSION)
 	DEPENDS:=+libpthread +librt +libuci +jansson +libiwinfo \
-	         +libcurl +libmbedtls
+		 +libcurl +libmbedtls +libnl-tiny +zlib
 endef
 
 define Package/unum/description
@@ -46,62 +45,37 @@ define Package/unum/description
 	See https://www.minim.co for more information.
 endef
 
-# Path to unum sources
-PKG_BUILD_DIR_UNUM=$(PKG_BUILD_DIR)/src/unum
-# Path to static files bundled with unum
-PKG_BUILD_DIR_FILES=$(PKG_BUILD_DIR)/files
-
-# Subdir where the agent sources are (where to cd to run make)
-MAKE_PATH:=src/unum
-
 # Platform (ie. MODEL) used to build the agent
-# OpenWrt builds use linux_generic by default
-AGENT_MODEL_ID=openwrt_generic
+AGENT_MODEL_ID=lede_generic
 
-# Trusted CA list location on the target
-AGENT_TRUSTED_CA_LIST=/etc/ssl/certs/unum-ca-certificates.crt
-
-# Agent config folder on the target
-AGENT_ETC_DIR=/etc/unum
-
-# Agent version
-AGENT_VERSION_NUMBER="$(PKG_VERSION)"
+# Agent hardware ID for this particular hardware target/subtarget/device
+ifeq ($(patsubst "%",%,$(CONFIG_VERSION_HWREV)),)
+  AGENT_HARDWARE_ID=$(patsubst "%",%,$(CONFIG_VERSION_PRODUCT))
+else
+  AGENT_HARDWARE_ID=$(patsubst "%",%,$(CONFIG_VERSION_PRODUCT))_$(patsubst "%",%,$(CONFIG_VERSION_HWREV))
+endif
 
 define Build/Configure
 endef
 
-define Build/Compile
-	$(call Build/Compile/Default,\
-	  AGENT_VERSION=$(patsubst "%",%,$(AGENT_VERSION_NUMBER))\
-	  MODEL=$(AGENT_MODEL_ID) TARGET_OBJ="$(PKG_BUILD_DIR)/src"\
-	  UNUM_DISABLE_TRACER=1)
-endef
+MAKE_FLAGS += \
+	TARGET_CFLAGS="$(TARGET_CFLAGS) \
+	-I$(STAGING_DIR)/usr/include/libnl-tiny \
+	$(TARGET_CPPFLAGS) -Wno-array-bounds \
+	-DAGENT_VERSION_IS_FW_VERSION \
+	-DCONFIG_LIBNL20" \
+	TARGET_LDFLAGS="$(TARGET_LDFLAGS)" \
+	MODEL=$(AGENT_MODEL_ID) HARDWARE=$(AGENT_HARDWARE_ID) \
+	TARGET_OBJ="$(PKG_BUILD_DIR)/src"
+
 
 define Package/unum/install
-	# Agent executable
-	$(INSTALL_DIR) $(1)/usr/bin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR_UNUM)/unum $(1)/usr/bin/
-	# Agent configuration folder
-	$(INSTALL_DIR) $(1)$(AGENT_ETC_DIR)
-	$(INSTALL_DATA) $(PKG_BUILD_DIR_FILES)/linux_generic/etc/config.json $(1)$(AGENT_ETC_DIR)/config.json
-	# Trusted certificates (install our own CA list)
-	$(INSTALL_DIR) $(1)/etc/ssl/certs
-	cat $(PKG_BUILD_DIR_FILES)/ca/*.pem > $(1)$(AGENT_TRUSTED_CA_LIST)
-	# Agent init files
-	$(INSTALL_DIR) $(1)/etc/init.d
-	$(INSTALL_BIN) $(PKG_BUILD_DIR_FILES)/openwrt_generic/etc/unum.init $(1)/etc/init.d/unum
-	$(INSTALL_DATA) $(PKG_BUILD_DIR_FILES)/openwrt_generic/etc/unum.common $(1)$(AGENT_ETC_DIR)/unum.common
+	# untar the unum rootfs into the package install dir
+	tar -zxvf $(PKG_BUILD_DIR)/out/$(AGENT_MODEL_ID)/$(AGENT_MODEL_ID)*.tgz -C $(1) > /dev/null
 
-	# Restart script
-	$(INSTALL_DATA) $(PKG_BUILD_DIR_FILES)/openwrt_generic/restart_config.sh $(1)/usr/bin/restart_config.sh
-
-	# Agent files to keep through the firmware upgrade
-	$(INSTALL_DIR) $(1)/lib/upgrade/keep.d
-	echo "/etc/unum/unum.pem" > $(1)/lib/upgrade/keep.d/unum.upgrade
-	echo "/etc/unum/unum.key" >> $(1)/lib/upgrade/keep.d/unum.upgrade
-	echo "/etc/unum/config.json" >> $(1)/lib/upgrade/keep.d/unum.upgrade
-	echo "/etc/unum/.credentials_provisioned" >> $(1)/lib/upgrade/keep.d/unum.upgrade
-	echo "/etc/unum/.wifi_provisioned" >> $(1)/lib/upgrade/keep.d/unum.upgrade
+	# Installing properties.json to rootfs under /etc/unum to avoid
+	# dealing with owrt build folders (although we do not need it on target)
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/out/$(AGENT_MODEL_ID)/release_properties.json $(1)/etc/unum/release_properties.json
 endef
 
 $(eval $(call BuildPackage,unum))
