@@ -50,7 +50,11 @@ AGENT_MODEL_ID=lede_generic
 
 # Agent hardware ID for this particular hardware target/subtarget/device
 ifeq ($(patsubst "%",%,$(CONFIG_VERSION_HWREV)),)
-  AGENT_HARDWARE_ID=$(patsubst "%",%,$(CONFIG_VERSION_PRODUCT))
+  ifeq ($(patsubst "%",%,$(CONFIG_VERSION_PRODUCT)),)
+    AGENT_HARDWARE_ID=openwrt_generic
+  else
+    AGENT_HARDWARE_ID=$(patsubst "%",%,$(CONFIG_VERSION_PRODUCT))
+  endif
 else
   AGENT_HARDWARE_ID=$(patsubst "%",%,$(CONFIG_VERSION_PRODUCT))_$(patsubst "%",%,$(CONFIG_VERSION_HWREV))
 endif
