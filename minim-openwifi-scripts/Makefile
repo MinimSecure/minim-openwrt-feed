@@ -27,7 +27,7 @@ endef
 
 define Package/minim-openwifi-scripts/install
 	$(INSTALL_DIR) $(1)/etc/uci-defaults
-	$(INSTALL_DATA) ./files/etc/uci-defaults/34_reject_wan_input $(1)/etc/uci-defaults
+	$(INSTALL_DATA) ./files/etc/uci-defaults/34_drop_wan_input $(1)/etc/uci-defaults
 
 endef
 
