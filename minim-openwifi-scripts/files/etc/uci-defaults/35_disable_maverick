@@ -1,0 +1,3 @@
+# disable the maverick service
+/etc/init.d/maverick disable
+exit 0
