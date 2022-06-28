@@ -24,6 +24,11 @@ body {
   background: #E5E5E5;
   padding: 0 5px;
   overflow: scroll;
+  margin-bottom: 48px;
+}
+
+.m-auto {
+  margin: auto;
 }
 
 .moto-sync-logo {
@@ -31,28 +36,25 @@ body {
   max-height: 40px;
   width: 100%;
   height: 100%;
-  margin: 48px auto;
+  margin: 48px auto 32px auto;
   display: block;
   object-fit: contain;
 }
 
 .card {
+  display: block;
   max-width: 359px;
   width: 100%;
   background: #FFFFFF;
-  border-radius: 32px;
+  border-radius: 24px;
   box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.161);
   text-align: center;
   margin: auto;
 }
 
 .download-links-card {
-  padding: 12px;
-  padding-top: 32px;
-}
-
-.metadata-card {
-  padding: 24px 32px;
+  padding: 32px;
+  padding-bottom: 48px;
 }
 
 .header {
@@ -72,8 +74,8 @@ body {
 .paragraph {
   font-family: 'GothamSSm';
   font-weight: 300;
-  font-size: 12px;
-  line-height: 14px;
+  font-size: 15px;
+  line-height: 22px;
   letter-spacing: 0.01em;
   text-align: left;
   margin: 8px auto;
@@ -84,52 +86,93 @@ body {
   font-weight: 600;
 }
 
-.download-links {
+.qr-section {
   margin: auto;
   background: #F7F7F7;
   border-radius: 20px;
   width: 100%;
-  max-width: 335px;
+  max-width: 221px;
   height: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 16px;
-  padding-left: 24px;
-}
-
-.store-img {
-  object-fit: contain;
-  width: 100%;
-  cursor: pointer;
-  filter: drop-shadow(0px 10px 8px rgba(0, 0, 0, 0.2));
-}
-
-.app-store-img {
-  max-width: 144px;
-}
-
-.play-store-img {
-  max-width: 162px;
 }
 
 .qr-code {
   height: 100%;
   width: 100%;
   object-fit: contain;
-  max-width: 96px;
-  max-height: 96px;
+  max-width: 72px;
+  max-height: 72px;
+}
+
+.primary-button {
+  max-width: 269px;
+  width: 100%;
+  height: 48px;
+  text-align: center;
+  background: #0D2C4B;
+  border-radius: 24px;
+  box-shadow: 0 7px 10px rgba(0, 0, 0, 0.16);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-family: 'GothamSSm';
+  font-size: 15px;
+  line-height: 22px;
+}
+
+.cable-modem-card {
+  max-width: 359px;
+  width: 100%;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 25px;
+  text-decoration: none;
+  font-family: 'GothamSSm';
+  font-size: 15px;
+  line-height: 22px;
+  color: #001428;
+}
+
+.metadata-card {
+  padding: 8px;
+}
+
+.metadata-section {
+  width: 100%;
+  height: 100%;
+  background: #F7F7F7;
+  border-radius: 24px;
+  padding: 24px;
+  text-align: left;
+}
+
+.metadata-header {
+  font-family: 'GothamSSm';
+  font-size: 13px;
+  line-height: 20px;
+  margin-bottom: 8px;
+}
+
+.metadata-value {
+  font-family: 'GothamSSm';
+  font-size: 15px;
+  line-height: 22px;
+  margin-bottom: 24px;
+  font-weight: 400;
+}
+
+.metadata-value:last-child {
+  margin-bottom: 0;
 }
 
 @media only screen and (max-width: 320px) {
-  .app-store-img {
-    max-width: 130px;
-  }
-
-  .play-store-img {
-    max-width: 140px;
-  }
-
   .qr-code {
     max-width: 72px;
     max-height: 72px;
@@ -142,27 +185,22 @@ body {
   .moto-sync-logo {
     max-width: 160px;
   }
-
-  .download-links {
-    padding: 12px;
-    padding-left: 18px;
-  }
 }
 
 @media only screen and (max-width: 280px) {
-  .app-store-img {
-    max-width: 118px;
-  }
-
-  .play-store-img {
-    max-width: 124px;
-  }
-
   .header {
     font-size: 14px;
   }
 
   .moto-sync-logo {
     max-width: 140px;
+  }
+
+  .metadata-value {
+    font-size: 14px;
+  }
+
+  .primary-button, .paragraph, .cable-modem-card, .metadata-header {
+    font-size: 12px;
   }
 }

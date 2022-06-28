@@ -1,0 +1,4 @@
+# this script updates the www template to add a link to the modem landing page
+LANDING=/www/index.provisioned.html
+sed -i -e 's+<!-- Placeholder -->+<a href="https://192.168.100.1" class="card cable-modem-card" style="margin-top: 8px;"><span>Cable modem management</span><img src="arrow-icon.png"></a>+' ${LANDING}
+exit 0
