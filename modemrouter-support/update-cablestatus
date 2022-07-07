@@ -1,0 +1,8 @@
+#!/bin/sh /etc/rc.common
+
+START=94
+
+start() {
+    ACTION=update /etc/rc.button/BTN_0
+}
+
