@@ -1,0 +1,33 @@
+#!/bin/sh
+
+# on cable modems like g11 there is a gpio that reports when the cable connection is up
+# this script runs when that gpio changes
+
+. /lib/functions.sh
+
+[ -f /etc/unum/features.sh ] && . /etc/unum/features.sh
+
+[ "$UNUM_FEATURE_CABLESTATUS_PIN_PRESENT" == "1" ] || exit 0
+
+logger "cablestatus: action=${ACTION}"
+
+[ -e /tmp/ignore_cablestatus ] && exit 0
+
+CABLESTATUS_FILE=/tmp/cablestatus_up
+
+case "$ACTION" in
+pressed)
+    touch $CABLESTATUS_FILE
+;;
+released)
+    rm -f $CABLESTATUS_FILE
+;;
+update)
+    STATE=`grep cablestatus /sys/kernel/debug/gpio | cut -c 59-60`
+    if [ $STATE == "hi" ]; then
+        touch $CABLESTATUS_FILE
+    else
+        rm -f $CABLESTATUS_FILE
+    fi
+;;    
+esac
