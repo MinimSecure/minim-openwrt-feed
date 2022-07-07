@@ -14,19 +14,23 @@ PKG_NAME:=minim-modemrouter-support
 PKG_RELEASE:=1
 
 include $(INCLUDE_DIR)/package.mk
+include $(INCLUDE_DIR)/host-build.mk
 
 define Package/minim-modemrouter-support
   SECTION:=minim
   CATEGORY:=Minim
   TITLE:=Modem/Router support files
-  DEPENDS:=+libuci +libminimcommon
+endef
+
+define Build/Compile
 endef
 
 define Package/minim-modemrouter-support/install
 	$(INSTALL_DIR) $(1)/etc/rc.button
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/BTN_0 $(1)/etc/rc.button/
+	$(INSTALL_BIN) BTN_0 $(1)/etc/rc.button/
 	$(INSTALL_DIR) $(1)/etc/init.d
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/update-cablestatus $(1)/etc/init.d/
+	$(INSTALL_BIN) update-cablestatus $(1)/etc/init.d/
 endef
 
+$(eval $(call HostBuild))
 $(eval $(call BuildPackage,minim-modemrouter-support))
