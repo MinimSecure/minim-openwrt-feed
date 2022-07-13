@@ -29,6 +29,7 @@ define Package/minim-openwifi-scripts/install
 	$(INSTALL_DIR) $(1)/etc/uci-defaults
 	$(INSTALL_DATA) ./files/etc/uci-defaults/34_drop_wan_input $(1)/etc/uci-defaults
 	$(INSTALL_DATA) ./files/etc/uci-defaults/35_disable_maverick $(1)/etc/uci-defaults
+	$(INSTALL_DATA) ./files/etc/uci-defaults/36_disable_firstcontact_config $(1)/etc/uci-defaults
 
 endef
 

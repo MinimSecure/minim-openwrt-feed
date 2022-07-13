@@ -1,0 +1,13 @@
+# If ucentral has configured this device, then exit immediately
+active=$(readlink  /etc/ucentral/ucentral.active)
+[ -n "$active" -a "$active" != "/etc/ucentral/ucentral.cfg.0000000001" ] && return 0
+
+# We don't want /etc/init.d/firstcontact to apply the openwifi out-of-box config, so
+# empty the config so it will harmlessly fail to apply
+[ -f /etc/ucentral/ucentral.cfg.0000000001 ] && echo "{}" > /etc/ucentral/ucentral.cfg.0000000001
+
+# We don't want to blow away the default wireless interfaces we created in
+# 31_default_wireless, so skip 99-ucentral-wifi (which does exactly that)
+rm /etc/uci-defaults/99-ucentral-wifi
+
+exit 0
