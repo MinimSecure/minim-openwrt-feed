@@ -10,4 +10,11 @@ active=$(readlink  /etc/ucentral/ucentral.active)
 # 31_default_wireless, so skip 99-ucentral-wifi (which does exactly that)
 rm /etc/uci-defaults/99-ucentral-wifi
 
+# We also don't want to blow away the default openwrt network config,
+# so skip 99-ucentral-network (which does exactly that)
+rm /etc/uci-defaults/99-ucentral-network
+
+# No srsly, don't delete the network config
+sed -i '/rm \/etc\/config\/network/d' /etc/uci-defaults/zzz-ucentral
+
 exit 0
