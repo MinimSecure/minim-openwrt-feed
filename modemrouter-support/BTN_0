@@ -21,9 +21,14 @@ pressed)
     # bounce the wan interface to force address renewal
     WANIF=`uci get network.wan.ifname`
     [ "$WANIF" != "" ] && ip link set $WANIF down && sleep 2 && ip link set $WANIF up
+    # update the leds
+    [ -x /etc/init.d/update_leds ] && /etc/init.d/update_leds restart
 ;;
 released)
     rm -f $CABLESTATUS_FILE
+    # turn the leds off and stop updates
+    [ -x /etc/init.d/update_leds ] && /etc/init.d/update_leds stop
+    [ -x /sbin/led.sh ] && /sbin/led.sh led_7600_off force
 ;;
 update)
     STATE=`grep cablestatus /sys/kernel/debug/gpio | cut -c 59-60`
