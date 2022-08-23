@@ -56,3 +56,5 @@ This package has slightly different semantics
 - it makes assumptions about the json syntax for simplicity
 - it commits immediately instead of deferring the operation until a commit is performed
 - it assumes network parameter changes are being made as per https://github.com/MinimSecure/minim-openwrt-feed/blob/master/web-rpc/src/web_rpc.c#L242
+
+The luci code repository is a git submodule under minim-openwrt-feed, so make sure to initialize and update it when working with this package locally
