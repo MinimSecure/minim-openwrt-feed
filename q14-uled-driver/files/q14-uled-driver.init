@@ -1,0 +1,13 @@
+#!/bin/sh /etc/rc.common
+
+START=98
+
+USE_PROCD=1
+PROG=/usr/sbin/q14-uled-driver
+
+start_service() {
+	stty -F /dev/ttyMSM1 115200
+	procd_open_instance
+	procd_set_param command "$PROG"
+	procd_close_instance
+}
