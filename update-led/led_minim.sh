@@ -1,0 +1,481 @@
+#!/bin/sh
+# (C) 2008 openwrt.org
+
+. /lib/functions.sh
+ACTION=$1
+NAME=$2
+do_led() {
+	local name
+	local sysfs
+	config_get name $1 name
+	config_get sysfs $1 sysfs
+	[ "$name" = "$NAME" -o "$sysfs" = "$NAME" -a -e "/sys/class/leds/${sysfs}" ] && {
+		[ "$ACTION" = "set" ] &&
+			echo 1 >/sys/class/leds/${sysfs}/brightness \
+			|| echo 0 >/sys/class/leds/${sysfs}/brightness
+		exit 0
+	}
+}
+
+[ "$1" = "clear" -o "$1" = "set" ] &&
+	[ -n "$2" ] &&{
+		config_load system
+		config_foreach do_led
+		exit 1
+	}
+
+[ "$1" = "test" ] && {
+	[ -z "$2" -o ! -e "/sys/class/leds/$2" ] &&
+		for fn in /sys/class/leds/*/trigger; do echo gpio > $fn; done \
+                || echo gpio > /sys/class/leds/"$2"/trigger
+}
+
+#######################################################################
+# 7020 specific led functionality
+#
+# All functions that are of the form led_7020_* are
+# part of the 7020 led spec and are intented to be
+# called from other scripts.
+#
+# There is functionality to run this script on its own
+# from the commandline such as:
+# ./led.sh led_7020
+#
+# Additionally there is demo functionality that can be
+# run from the commandline:
+# ./led.sh _demo
+#######################################################################
+
+# the LEDs are showing quite pink so we try to balance the colours here (SW-1299)
+readonly LED_WHITE_STANDARD_RED_LEVEL=120
+readonly LED_WHITE_STANDARD_GREEN_LEVEL=255
+readonly LED_WHITE_STANDARD_BLUE_LEVEL=120
+readonly LED_WHITE_DIM_RED_LEVEL=10
+readonly LED_WHITE_DIM_GREEN_LEVEL=13
+readonly LED_WHITE_DIM__BLUE_LEVEL=10
+
+readonly LED_AMBER_STANDARD_RED_LEVEL=255
+readonly LED_AMBER_STANDARD_GREEN_LEVEL=120
+readonly LED_AMBER_STANDARD_BLUE_LEVEL=0
+readonly LED_AMBER_DIM_RED_LEVEL=10
+readonly LED_AMBER_DIM_GREEN_LEVEL=10
+readonly LED_AMBER_DIM__BLUE_LEVEL=0
+
+# led_7020_state location
+# the intention is if any led_7020_* function is triggered
+# more than once we can ignore the duplicate calls
+# effectively keeping the calls idempotent
+readonly LED_7020_STATE="/var/run/led_7020.state"
+
+# led_7020_states
+readonly LED_7020_INIT="led_7020_initial_state"
+readonly LED_7020_BOOT="led_7020_boot"
+readonly LED_7020_AGENT_UP_BASE="led_7020_agent_up_base"
+readonly LED_7020_AGENT_UP_SATELLITE_THRESHOLD_OK="led_7020_agent_up_satellite_threshold_ok"
+readonly LED_7020_AGENT_UP_SATELLITE_THRESHOLD_LOW="led_7020_agent_up_satellite_threshold_low"
+readonly LED_7020_AGENT_DOWN="led_7020_agent_down"
+readonly LED_7020_FIRMWARE_UPDATE="led_7020_firmware_update"
+readonly LED_7020_FACTORY_DEFAULTS="led_7020_factory_defaults"
+readonly LED_7020_SATELLITE_CONNECTING="led_7020_satellite_connecting"
+readonly LED_7020_REBOOT="led_7020_reboot"
+readonly LED_7020_OFF="led_7020_off"
+readonly LED_7020_GET_STATE="led_7020_get_state"
+# The following value is read from /etc/config/minim which in fact is set
+# from the server
+BRIGHTNESS_THRESHOLD=255
+
+# led sysfs names per uci
+readonly RED=$(uci get system.led_red.sysfs)
+readonly GREEN=$(uci get system.led_green.sysfs)
+readonly BLUE=$(uci get system.led_blue.sysfs)
+
+# location of led node
+readonly LEDS_NODE="/sys/class/leds"
+
+# attributes that can be updated 
+readonly TRIGGER="trigger"
+readonly BRIGHTNESS="brightness"
+readonly DELAY_ON="delay_on"
+readonly DELAY_OFF="delay_off"
+
+# time intervals in ms
+readonly WHOLE="1000"
+readonly QUARTER="250"
+
+# $1 is a function
+# $2 is a string of leds such as "$RED" or "$RED $BLUE"
+# $3 is an optional value
+# $4 param is an optional value
+#
+# for each of the leds run the function with provided parameters
+_shift_while() {
+    local ___fn="$1"
+    [ "$#" -ge 1 ] && shift
+    local ___params="$1"
+    [ "$#" -ge 1 ] && shift
+    local ___alpha="$1"
+    [ "$#" -ge 1 ] && shift
+    local ___beta="$1"
+
+    for p in $___params; do
+        eval "$___fn $p $___alpha $___beta"
+    done
+}
+
+# Activate the `none` trigger for specified led
+# This action automatically sets the brightness to zero
+_none_trigger() {
+    echo "none" > "$LEDS_NODE/$1/$TRIGGER"
+}
+
+# Activate the `default-on` trigger for the specified led
+_default_on_trigger() {
+    # don't update default-on if it's already set as it will
+    # flicker the led
+    grep -q "default-on" < "$LEDS_NODE/$1/$TRIGGER"
+    [ $? -ne 0 ] && echo "default-on" > "$LEDS_NODE/$1/$TRIGGER"
+}
+
+# Set the brightness to the specified amount for the
+# specfied led.
+_brightness() {
+    # Check if we have any desired value
+    if [ "$2" != "" ]; then
+        val=$2
+    else
+        val=$BRIGHTNESS_LEVEL
+    fi
+    # For some reason (possibly in the broadcom gpio driver),
+    # a nonzero and non-255 brightness value does n't work 
+    # if the current value is 0. In that case,
+    # first set the brightness to 255 and then to the desired value
+    cur_val=`cat "$LEDS_NODE/$1/$BRIGHTNESS"`
+    if [ "$val" != 0 ] && [ "$val" != 255 ]; then
+        if [ $cur_val -eq 0 ]; then
+            echo "255" > "$LEDS_NODE/$1/$BRIGHTNESS"
+        fi                           
+    fi
+    echo "$val" > "$LEDS_NODE/$1/$BRIGHTNESS"
+}
+
+# Set brighness of specified leds to one.
+# This may take a string of leds such as "$RED $BLUE"
+# This is useful to set the brightness of leds to
+# a level that is not perceivable, and not zero.
+#
+# In the case that a trigger is set to `timer`
+# and the brightness is set to 0 the trigger will
+# automatically be set to `none`
+_brightness_one() {
+    _shift_while _brightness "$1" "1"
+}
+
+# Set brightness of specified leds to zero.
+# This may take a string of leds such as "$RED $BLUE"
+_brightness_full() {
+    _shift_while _brightness "$1" "255"
+}
+
+# Activate the `timer` trigger for the specified led
+_timer_trigger() {
+    echo "timer" > "$LEDS_NODE/$1/$TRIGGER"
+}
+
+# Set delay on to the specified time in milliseconds
+# for the specified led
+_delay_on() {
+    echo "$2" > "$LEDS_NODE/$1/$DELAY_ON"
+}
+
+# Set delay off to the specified time in milliseconds
+# for the specified led
+_delay_off() {
+    echo "$2" > "$LEDS_NODE/$1/$DELAY_OFF"
+}
+
+# LED will blink 1s on; 1s off
+_blink() {
+    _shift_while _delay_on "$1" "$WHOLE"
+    _shift_while _delay_off "$1" "$WHOLE"
+}
+
+# LED will rapidly blink .25s on; .25s off
+_rapidly_blink() {
+    _shift_while _delay_on "$1" "$QUARTER"
+    _shift_while _delay_off "$1" "$QUARTER"
+}
+
+# Update current state of led
+_set_state() {
+    echo "$1" > "$LED_7020_STATE"   
+}
+
+# Get current state of led
+_get_state() {
+    if [ ! -f "$LED_7020_STATE" ]; then
+        _set_state "$LED_7020_INIT"
+        # Wait as long as possible to call init led
+        # as the HW boot blink has been initiated
+        # by the bootloader and it is desirable
+        # to let that carry on uninterrupted
+        local ___discard=$( /etc/init.d/led "start" )
+    fi
+
+    echo $( cat "$LED_7020_STATE" )
+}
+
+# Return if the state of the led 
+# has changed
+_is_new_state() {
+    local ___current_state=$(_get_state)
+    [ "$1" != "$___current_state" ]
+    echo $?
+}
+
+# 7020 specific boot led sequence
+led_7020_boot() {  
+    if [ $(_is_new_state "$LED_7020_BOOT") -eq 0 ]; then
+        led_7020_off
+        _shift_while _timer_trigger "$RED $GREEN $BLUE"
+        _brightness_one "$RED $GREEN $BLUE"
+        _blink "$RED $GREEN $BLUE"
+        _brightness_full "$RED $GREEN $BLUE"
+        _set_state "$LED_7020_BOOT"
+    fi
+}
+
+# 7020 specific agent up on base led sequence
+led_7020_agent_up_base() {
+    if [ $(_is_new_state "$LED_7020_AGENT_UP_BASE") -eq 0 ]; then
+        # default to off
+        _red=0
+        _green=0
+        _blue=0
+        if [ $BRIGHTNESS_LEVEL == "DIM" ]; then
+            # dim white
+            _red=$LED_WHITE_DIM_RED_LEVEL
+            _green=$LED_WHITE_DIM_GREEN_LEVEL
+            _blue=$LED_WHITE_DIM__BLUE_LEVEL
+        elif [ $BRIGHTNESS_LEVEL == "STANDARD" ]; then
+            # white
+            _red=$LED_WHITE_STANDARD_RED_LEVEL
+            _green=$LED_WHITE_STANDARD_GREEN_LEVEL
+            _blue=$LED_WHITE_STANDARD_BLUE_LEVEL
+        fi
+        led_7020_off
+        _shift_while _default_on_trigger "$RED $GREEN $BLUE"
+        _shift_while _default_on_trigger "$RED $GREEN $BLUE"
+        _shift_while _brightness "$RED" "$_red"
+        _shift_while _brightness "$GREEN" "$_green"
+        _shift_while _brightness "$BLUE" "$_blue"
+        _set_state "$LED_7020_AGENT_UP_BASE"
+    fi
+}
+
+# 7020 specific agent up on satellite led sequence
+led_7020_agent_up_satellite_threshold_ok() {
+    # default to off
+    _red=0
+    _green=0
+    _blue=0
+    if [ $BRIGHTNESS_LEVEL == "DIM" ]; then
+        # dim white
+        _red=$LED_WHITE_DIM_RED_LEVEL
+        _green=$LED_WHITE_DIM_GREEN_LEVEL
+        _blue=$LED_WHITE_DIM__BLUE_LEVEL
+    elif [ $BRIGHTNESS_LEVEL == "STANDARD" ]; then
+        # white
+        _red=$LED_WHITE_STANDARD_RED_LEVEL
+        _green=$LED_WHITE_STANDARD_GREEN_LEVEL
+        _blue=$LED_WHITE_STANDARD_BLUE_LEVEL
+    fi
+
+    led_7020_off
+    _shift_while _default_on_trigger "$RED $GREEN $BLUE"
+    _shift_while _brightness "$RED" "$_red"
+    _shift_while _brightness "$GREEN" "$_green"
+    _shift_while _brightness "$BLUE" "$_blue"
+    _set_state "$LED_7020_AGENT_UP_SATELLITE_THRESHOLD"
+}
+
+led_7020_agent_up_satellite_threshold_low() {
+    # default to off
+    _red=0
+    _green=0
+    _blue=0
+    if [ $BRIGHTNESS_LEVEL == "DIM" ]; then
+        # dim amber
+        _red=$LED_AMBER_DIM_RED_LEVEL
+        _green=$LED_AMBER_DIM_GREEN_LEVEL
+        _blue=$LED_AMBER_DIM__BLUE_LEVEL
+    elif [ $BRIGHTNESS_LEVEL == "STANDARD" ]; then
+        # amber
+        _red=$LED_AMBER_STANDARD_RED_LEVEL
+        _green=$LED_AMBER_STANDARD_GREEN_LEVEL
+        _blue=$LED_AMBER_STANDARD_BLUE_LEVEL
+    fi
+
+    led_7020_off
+    _shift_while _default_on_trigger "$RED $GREEN $BLUE"
+    _shift_while _brightness "$RED" "$_red"
+    _shift_while _brightness "$GREEN" "$_green"
+    _shift_while _brightness "$BLUE" "$_blue"
+    _set_state "$LED_7020_AGENT_UP_SATELLITE_THRESHOLD"
+}
+
+# 7020 specific agent down led sequence
+led_7020_agent_down() {
+    if [ $(_is_new_state "$LED_7020_AGENT_DOWN") -eq 0 ]; then
+        led_7020_off
+	echo "nandy agent down" > /dev/kmsg
+        #_shift_while _timer_trigger "$GREEN $BLUE $RED"
+        _brightness_one "$GREEN"
+        #_blink "$GREEN $BLUE"
+        #_brightness "$RED" 1
+        #_brightness_full "$GREEN $BLUE $RED"
+        _set_state "$LED_7020_AGENT_DOWN"
+    fi
+}
+
+# 7020 specific firmware update led sequence
+led_7020_firmware_update() {
+    if [ $(_is_new_state "$LED_7020_FIRMWARE_UPDATE") -eq 0 ]; then
+        led_7020_off
+        _shift_while _timer_trigger "$GREEN $BLUE"
+        _brightness_one "$GREEN $BLUE"
+        _rapidly_blink "$GREEN $BLUE"
+        _brightness "$RED" 0
+        _brightness_full "$GREEN $BLUE"
+        _set_state "$LED_7020_FIRMWARE_UPDATE"
+    fi
+}
+
+# 7020 specific factory defaults led sequence
+led_7020_factory_defaults() {
+    if [ $(_is_new_state "$LED_7020_FACTORY_DEFAULTS") -eq 0 ]; then
+        led_7020_off
+        _shift_while _timer_trigger "$GREEN $BLUE"
+        _brightness_one "$GREEN $BLUE"
+        _rapidly_blink "$GREEN $BLUE"
+        _brightness "$RED" 0
+        _brightness_full "$GREEN $BLUE"
+        _set_state "$LED_7020_FACTORY_DEFAULTS"
+    fi
+}
+
+# 7020 specific satellite connecting led sequence
+led_7020_satellite_connecting() {
+    if [ $(_is_new_state "$LED_7020_SATELLITE_CONNECTING") -eq 0 ]; then
+        led_7020_off
+	_shift_while _timer_trigger "$GREEN $BLUE"
+        _brightness_one "$GREEN $BLUE"
+        _blink "$GREEN $BLUE"
+        _brightness "$RED" 0
+        _brightness_full "$GREEN $BLUE"
+        _set_state "$LED_7020_SATELLITE_CONNECTING"
+    fi
+}
+
+# 7020 specific reboot led sequence
+led_7020_reboot() {
+    if [ $(_is_new_state "$LED_7020_REBOOT") -eq 0 ]; then
+        led_7020_off
+	_shift_while _timer_trigger "$GREEN $BLUE"
+        _brightness_one "$GREEN $BLUE"
+        _blink "$GREEN $BLUE"
+        _brightness "$RED" 0
+        _brightness_full "$GREEN $BLUE"
+        _set_state "$LED_7020_AGENT_DOWN"
+    fi
+}
+
+# Turn the led off
+led_7020_off() {
+    if [ $(_is_new_state "$LED_7020_OFF") -eq 0 ]; then
+        _shift_while _none_trigger "$RED $GREEN $BLUE"
+        _set_state "$LED_7020_OFF"
+    fi
+}
+
+# A demo of the 7020 blink sequences
+_demo() {
+    
+    echo "Starting LED Demo"
+    led_7020_switch "$LED_7020_OFF"
+    sleep 1
+
+    echo "$LED_7020_FACTORY_DEFAULTS"
+    led_7020_switch "$LED_7020_FACTORY_DEFAULTS"
+    sleep 5
+
+    echo "$LED_7020_BOOT"
+    led_7020_switch "$LED_7020_BOOT"
+    sleep 5
+
+    echo "$LED_7020_AGENT_UP_BASE 32"
+    led_7020_switch "$LED_7020_AGENT_UP_BASE"
+    sleep 5
+
+    echo "$LED_7020_SATELLITE_CONNECTING"
+    led_7020_switch "$LED_7020_SATELLITE_CONNECTING"
+    sleep 5
+
+    echo "$LED_7020_AGENT_UP_SATELLITE_THRESHOLD_OK"
+    led_7020_switch "$LED_7020_AGENT_UP_SATELLITE_THRESHOLD_OK"
+    sleep 5
+
+    echo "$LED_7020_AGENT_UP_SATELLITE_THRESHOLD_LOW"
+    led_7020_switch "$LED_7020_AGENT_UP_SATELLITE_THRESHOLD_LOW"
+    sleep 5
+
+    echo "$LED_7020_AGENT_DOWN"
+    led_7020_switch "$LED_7020_AGENT_DOWN"
+    sleep 5
+
+    echo "$LED_7020_FIRMWARE_UPDATE"
+    led_7020_switch "$LED_7020_FIRMWARE_UPDATE"
+    sleep 5
+    
+    echo "$LED_7020_REBOOT"
+    led_7020_switch "$LED_7020_REBOOT"
+    sleep 5
+
+    led_7020_switch "$LED_7020_OFF"
+}
+
+# choose the sequence to run
+led_7020_switch() {
+    case "$1" in
+        $LED_7020_BOOT) led_7020_boot;;
+        $LED_7020_AGENT_UP_BASE) led_7020_agent_up_base;;
+        $LED_7020_AGENT_UP_SATELLITE_THRESHOLD_OK) led_7020_agent_up_satellite_threshold_ok;;
+        $LED_7020_AGENT_UP_SATELLITE_THRESHOLD_LOW) led_7020_agent_up_satellite_threshold_low;;
+        $LED_7020_AGENT_DOWN) led_7020_agent_down;;
+        $LED_7020_FIRMWARE_UPDATE) led_7020_firmware_update;;
+        $LED_7020_FACTORY_DEFAULTS) led_7020_factory_defaults;;
+        $LED_7020_SATELLITE_CONNECTING) led_7020_satellite_connecting;;
+        $LED_7020_REBOOT) led_7020_reboot;;
+        $LED_7020_OFF) led_7020_off;;
+        $LED_7020_GET_STATE) _get_state;;
+        _demo) led_7020_off && _demo;;
+        *) echo "$1 Action not recognized";;
+    esac
+}
+
+_uci_brightness=`/sbin/uci get minim.@unum[0].led_brightness`
+BRIGHTNESS_LEVEL=STANDARD
+if [ "$_uci_brightness" != "" ]; then
+    if [ $_uci_brightness -le 33 ]; then
+        # 0 to 33 should be off
+        BRIGHTNESS_LEVEL=OFF
+    elif [ $_uci_brightness -le 66 ]; then
+        # 34 to 66 should be dim
+        BRIGHTNESS_LEVEL=DIM
+    fi
+fi
+# remove existing state where a force is desired
+[ "$2" == "force" ] && _set_state ""
+
+# run the command
+[ -n "$1" ] && led_7020_switch "$1" && exit 0
+

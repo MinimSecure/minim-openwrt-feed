@@ -1,0 +1,19 @@
+
+# Configure default LEDs behavior (for now just defaults to none)
+uci -q batch <<-EOF >/dev/null
+  set system.led_red=led
+  set system.led_red.name='red'
+  set system.led_red.sysfs='red'
+  set system.led_red.trigger='none'
+  set system.led_green=led
+  set system.led_green.name='green'
+  set system.led_green.sysfs='green'
+  set system.led_green.trigger='none'
+  set system.led_blue=led
+  set system.led_blue.name='blue'
+  set system.led_blue.sysfs='blue'
+  set system.led_blue.trigger='none'
+  commit system
+EOF
+
+exit 0
