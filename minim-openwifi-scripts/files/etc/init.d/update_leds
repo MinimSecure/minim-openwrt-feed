@@ -1,0 +1,12 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2008-2021 OpenWrt.org
+
+START=99
+
+start() {
+    /sbin/update_leds.sh &
+}
+stop() {
+    ps | grep update_leds.sh | grep -v grep | awk '{print $1}' | xargs kill >/dev/null 2>&1
+}
+
