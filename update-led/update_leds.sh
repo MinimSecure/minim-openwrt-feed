@@ -4,7 +4,6 @@ AGENT_STATUS_UP_LED_FILE=/tmp/agent_status_up_led
 
 #opmode=`/bin/nvram get multiap_mode`
 opmode=`uci get minim.@unum[-1].opmode`
-#opmode=1
 INIT=2
 
 agent_status_curr=0
@@ -22,7 +21,6 @@ do
     fi
     if [ $opmode != "ap" ]; then
         # all modes but repeater
-	echo "repeater all nandy" > /dev/kmsg
         if [ $agent_status_prev -ne $agent_status_curr ]; then
             # has changed so update the led
             if [ $agent_status_curr -eq 1 ]; then
@@ -30,21 +28,16 @@ do
                     # on startup, force the led to update in case
                     # the brightness has changed
                     /sbin/led_minim.sh "led_7020_agent_up_base" "force"
-		    echo "repeater all nandy1" > /dev/kmsg
                 else
                     /sbin/led_minim.sh "led_7020_agent_up_base"
-		    echo "repeater all nandy2" > /dev/kmsg
                 fi
             else
                 /sbin/led_minim.sh "led_7020_agent_down"
-		echo "repeater all nandy3" > /dev/kmsg
-            fi
+	    fi
         fi
     else
         # repeater
-	echo "repeater nandy" > /dev/kmsg
-
-        # read and evaluate rssi
+	# read and evaluate rssi
         rssi=`wl -i wl1 rssi 2>/dev/null`
         if [ "$rssi" == "" ]; then
             # Some error while getting RSSI
@@ -68,27 +61,22 @@ do
                     if [ $agent_status_prev -eq $INIT ]; then
                         # on startup, force the led to update in case
                         # the brightness has changed
-			echo "repeater nandy1" > /dev/kmsg
                         /sbin/led_minim.sh "led_7020_agent_up_satellite_threshold_ok" "force"
-                    else	
-		        echo "repeater nandy2" > /dev/kmsg
-                        /sbin/led_minim.sh "led_7020_agent_up_satellite_threshold_ok"
+                    else
+			/sbin/led_minim.sh "led_7020_agent_up_satellite_threshold_ok"
                     fi
                 else
                     # agent is up but signal is poor
                     if [ $agent_status_prev -eq $INIT ]; then
                         # on startup, force the led to update in case
                         # the brightness has changed
-			echo "repeater nandy3" > /dev/kmsg
                         /sbin/led_minim.sh "led_7020_agent_up_satellite_threshold_low" "force"
                     else
-			echo "repeater nandy4" > /dev/kmsg
                         /sbin/led_minim.sh "led_7020_agent_up_satellite_threshold_low"
                     fi
                 fi
             else
                 # agent is down
-		echo "repeater agent down" > /dev/kmsg
                 /sbin/led_minim.sh "led_7020_agent_down"
             fi
         fi

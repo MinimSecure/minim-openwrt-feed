@@ -327,8 +327,7 @@ led_7020_agent_up_satellite_threshold_low() {
 led_7020_agent_down() {
     if [ $(_is_new_state "$LED_7020_AGENT_DOWN") -eq 0 ]; then
         led_7020_off
-	echo "nandy agent down" > /dev/kmsg
-        #_shift_while _timer_trigger "$GREEN $BLUE $RED"
+	#_shift_while _timer_trigger "$GREEN $BLUE $RED"
         _brightness_one "$GREEN"
         #_blink "$GREEN $BLUE"
         #_brightness "$RED" 1
