@@ -33,7 +33,8 @@ define Package/minim-web-landing/install
 	$(INSTALL_DATA) index.unprovisioned.html $(1)/www
 	$(INSTALL_DATA) Makefile			     $(1)/www
 	$(INSTALL_DATA) moto-sync-logo.png	     $(1)/www
-	$(INSTALL_DATA) qr-motorolanetwork.com-motosync.png $(1)/www
+	$(INSTALL_DATA) qr-code.png $(1)/www
+	$(INSTALL_DATA) arrow-icon.png $(1)/www
 	$(INSTALL_DIR)                           $(1)/www/styles
 	$(INSTALL_DATA) styles/style.css         $(1)/www/styles/
 
