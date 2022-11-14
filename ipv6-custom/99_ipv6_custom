@@ -1,0 +1,36 @@
+# Copyright (C) 2022 Minim Inc
+#
+# non standard ipv6 customisations to openwrt
+
+# ensure v6 dhcp settings are correct (older cloud codecs
+# overwrote these
+uci -q set dhcp.lan.dhcpv6='server'
+uci -q set dhcp.lan.ra='server'
+uci -q set dhcp.lan.ra_dns=0
+
+# ensure odhcp logging
+uci -q set dhcp.odhcpd.loglevel=255
+
+# disable ULA addressing
+uci -q delete network.globals.ula_prefix
+
+# find the dhcp firewall entry for Allow-DHCPv6 and update it
+ix=0
+while [ $ix -le 99 ] ; do
+   name=`uci -q get firewall.@rule[$ix].name`
+   [ $? -ne 0 ] && break
+
+   if [ "$name" == "Allow-DHCPv6" ]; then
+       uci -q set firewall.@rule[$ix].src_ip=""
+       break
+   fi
+
+   ix=`expr $ix + 1`
+done
+
+# commit changes
+uci commit
+sync
+
+# run always
+exit 1
