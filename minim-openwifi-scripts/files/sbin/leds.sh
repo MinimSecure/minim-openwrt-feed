@@ -185,7 +185,7 @@ _netdev_trigger() {
 _default_on_trigger() {
     # don't update default-on if it's already set as it will
     # flicker the led
-    grep -q "default-on" < "$LEDS_NODE/$1/$TRIGGER"
+    grep -q "\[default-on\]" < "$LEDS_NODE/$1/$TRIGGER"
     [ $? -ne 0 ] && echo "default-on" > "$LEDS_NODE/$1/$TRIGGER"
 }
 
