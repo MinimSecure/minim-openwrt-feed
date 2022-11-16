@@ -94,6 +94,8 @@ readonly LED_SATELLITE_CONNECTING="led_satellite_connecting"
 readonly LED_REBOOT="led_reboot"
 readonly LED_ACTIONS_OFF="led_actions_off"
 readonly LED_OFF="led_off"
+readonly LED_WPS="led_wps"
+readonly LED_WLAN="led_wlan"
 readonly LED_GET_STATE="led_get_state"
 # The following value is read from /etc/config/minim which in fact is set
 # from the server
@@ -106,6 +108,15 @@ BRIGHTNESS_THRESHOLD=255
 readonly RED=red
 readonly GREEN=green
 readonly BLUE=blue
+readonly AMBER=amber
+readonly WIFI_2G=wifi_2g
+readonly WIFI_5G=wifi_5g
+readonly USB=usb
+readonly POWER=power
+readonly LAN1=lan1
+readonly LAN2=lan2
+readonly LAN3=lan3
+readonly LAN4=lan4
 
 # location of led node
 readonly LEDS_NODE="/sys/class/leds"
@@ -144,6 +155,30 @@ _shift_while() {
 # This action automatically sets the brightness to zero
 _none_trigger() {
     echo "none" > "$LEDS_NODE/$1/$TRIGGER"
+}
+
+# Activate the `usbport` trigger for the specified led and usb port
+_usbport_trigger() {
+    echo "usbport" > "$LEDS_NODE/$1/$TRIGGER"
+    echo "1" > "$LEDS_NODE/$1/ports/$2"
+}
+
+# Activate the `netdev` trigger for the specified led and device
+# with link trigger only
+_netdev_link_trigger() {
+    echo "netdev" > "$LEDS_NODE/$1/$TRIGGER"
+    echo "1" > "$LEDS_NODE/$1/link"
+    echo "$2" > "$LEDS_NODE/$1/device_name"
+}
+
+# Activate the `netdev` trigger for the specified led and device
+# with link, rx, and tx triggers
+_netdev_trigger() {
+    echo "netdev" > "$LEDS_NODE/$1/$TRIGGER"
+    echo "1" > "$LEDS_NODE/$1/link"
+    echo "1" > "$LEDS_NODE/$1/rx"
+    echo "1" > "$LEDS_NODE/$1/tx"
+    echo "$2" > "$LEDS_NODE/$1/device_name"
 }
 
 # Activate the `default-on` trigger for the specified led
@@ -259,11 +294,26 @@ _is_new_state() {
 # boot led sequence
 led_boot() {  
     if [ $(_is_new_state "$LED_BOOT") -eq 0 ]; then
-        led_actions_off
-        _shift_while _timer_trigger "$RED $GREEN $BLUE"
-        _brightness_one "$RED $GREEN $BLUE"
-        _blink "$RED $GREEN $BLUE"
-        _brightness_full "$RED $GREEN $BLUE"
+        if [ "$(board_name)" == "motorola,r14" ] ; then
+            _none_trigger "$GREEN"
+            _brightness_zero "$GREEN"
+            _brightness_full "$AMBER"
+            _netdev_link_trigger "$AMBER" eth1
+            _default_on_trigger "$POWER"
+            _brightness_full "$POWER"
+            _usbport_trigger $USB usb1-port2
+	    _netdev_trigger "$LAN1" lan1
+	    _netdev_trigger "$LAN2" lan2
+	    _netdev_trigger "$LAN3" lan3
+	    _netdev_trigger "$LAN4" lan4
+            led_wlan
+	else
+            led_actions_off
+            _shift_while _timer_trigger "$RED $GREEN $BLUE"
+            _brightness_one "$RED $GREEN $BLUE"
+            _blink "$RED $GREEN $BLUE"
+            _brightness_full "$RED $GREEN $BLUE"
+        fi
         _set_state "$LED_BOOT"
     fi
 }
@@ -271,6 +321,45 @@ led_boot() {
 # agent up on base led sequence
 led_agent_up_base() {
     if [ $(_is_new_state "$LED_AGENT_UP_BASE") -eq 0 ]; then
+        if [ "$(board_name)" == "motorola,r14" ] ; then
+            _none_trigger "$AMBER"
+            _brightness_zero "$AMBER"
+            _brightness_full "$GREEN"
+            _netdev_link_trigger "$GREEN" eth1
+        else
+            # default to off
+            _red=0
+            _green=0
+            _blue=0
+            if [ $BRIGHTNESS_LEVEL == "DIM" ]; then
+                # dim white
+                _red=$LED_WHITE_DIM_RED_LEVEL
+                _green=$LED_WHITE_DIM_GREEN_LEVEL
+                _blue=$LED_WHITE_DIM__BLUE_LEVEL
+            elif [ $BRIGHTNESS_LEVEL == "STANDARD" ]; then
+                # white
+                _red=$LED_WHITE_STANDARD_RED_LEVEL
+                _green=$LED_WHITE_STANDARD_GREEN_LEVEL
+                _blue=$LED_WHITE_STANDARD_BLUE_LEVEL
+            fi
+            led_actions_off
+            _shift_while _default_on_trigger "$RED $GREEN $BLUE"
+            _shift_while _brightness "$RED" "$_red"
+            _shift_while _brightness "$GREEN" "$_green"
+            _shift_while _brightness "$BLUE" "$_blue"
+        fi
+        _set_state "$LED_AGENT_UP_BASE"
+    fi
+}
+
+# agent up on satellite led sequence
+led_agent_up_satellite_threshold_ok() {
+    if [ "$(board_name)" == "motorola,r14" ] ; then
+        _none_trigger "$AMBER"
+        _brightness_zero "$AMBER"
+        _default_on_trigger "$GREEN"
+        _brightness_full "$GREEN"
+    else
         # default to off
         _red=0
         _green=0
@@ -291,58 +380,39 @@ led_agent_up_base() {
         _shift_while _brightness "$RED" "$_red"
         _shift_while _brightness "$GREEN" "$_green"
         _shift_while _brightness "$BLUE" "$_blue"
-        _set_state "$LED_AGENT_UP_BASE"
     fi
-}
-
-# agent up on satellite led sequence
-led_agent_up_satellite_threshold_ok() {
-    # default to off
-    _red=0
-    _green=0
-    _blue=0
-    if [ $BRIGHTNESS_LEVEL == "DIM" ]; then
-        # dim white
-        _red=$LED_WHITE_DIM_RED_LEVEL
-        _green=$LED_WHITE_DIM_GREEN_LEVEL
-        _blue=$LED_WHITE_DIM__BLUE_LEVEL
-    elif [ $BRIGHTNESS_LEVEL == "STANDARD" ]; then
-        # white
-        _red=$LED_WHITE_STANDARD_RED_LEVEL
-        _green=$LED_WHITE_STANDARD_GREEN_LEVEL
-        _blue=$LED_WHITE_STANDARD_BLUE_LEVEL
-    fi
-
-    led_actions_off
-    _shift_while _default_on_trigger "$RED $GREEN $BLUE"
-    _shift_while _brightness "$RED" "$_red"
-    _shift_while _brightness "$GREEN" "$_green"
-    _shift_while _brightness "$BLUE" "$_blue"
     _set_state "$LED_AGENT_UP_SATELLITE_THRESHOLD"
 }
 
 led_agent_up_satellite_threshold_low() {
-    # default to off
-    _red=0
-    _green=0
-    _blue=0
-    if [ $BRIGHTNESS_LEVEL == "DIM" ]; then
-        # dim amber
-        _red=$LED_AMBER_DIM_RED_LEVEL
-        _green=$LED_AMBER_DIM_GREEN_LEVEL
-        _blue=$LED_AMBER_DIM__BLUE_LEVEL
-    elif [ $BRIGHTNESS_LEVEL == "STANDARD" ]; then
-        # amber
-        _red=$LED_AMBER_STANDARD_RED_LEVEL
-        _green=$LED_AMBER_STANDARD_GREEN_LEVEL
-        _blue=$LED_AMBER_STANDARD_BLUE_LEVEL
-    fi
+    if [ "$(board_name)" == "motorola,r14" ] ; then
+        _none_trigger "$GREEN"
+        _brightness_zero "$GREEN"
+        _default_on_trigger "$AMBER"
+        _brightness_full "$AMBER"
+    else
+        # default to off
+        _red=0
+        _green=0
+        _blue=0
+        if [ $BRIGHTNESS_LEVEL == "DIM" ]; then
+            # dim amber
+            _red=$LED_AMBER_DIM_RED_LEVEL
+            _green=$LED_AMBER_DIM_GREEN_LEVEL
+            _blue=$LED_AMBER_DIM__BLUE_LEVEL
+        elif [ $BRIGHTNESS_LEVEL == "STANDARD" ]; then
+            # amber
+            _red=$LED_AMBER_STANDARD_RED_LEVEL
+            _green=$LED_AMBER_STANDARD_GREEN_LEVEL
+            _blue=$LED_AMBER_STANDARD_BLUE_LEVEL
+        fi
 
-    led_actions_off
-    _shift_while _default_on_trigger "$RED $GREEN $BLUE"
-    _shift_while _brightness "$RED" "$_red"
-    _shift_while _brightness "$GREEN" "$_green"
-    _shift_while _brightness "$BLUE" "$_blue"
+        led_actions_off
+        _shift_while _default_on_trigger "$RED $GREEN $BLUE"
+        _shift_while _brightness "$RED" "$_red"
+        _shift_while _brightness "$GREEN" "$_green"
+        _shift_while _brightness "$BLUE" "$_blue"
+    fi
     _set_state "$LED_AGENT_UP_SATELLITE_THRESHOLD"
 }
 
@@ -350,12 +420,19 @@ led_agent_up_satellite_threshold_low() {
 # Default agent down led sequence
 led_agent_down_default() {
     if [ $(_is_new_state "$LED_AGENT_DOWN") -eq 0 ]; then
-        led_actions_off
-        _shift_while _timer_trigger "$GREEN $BLUE"
-        _brightness_one "$GREEN $BLUE"
-        _blink "$GREEN $BLUE"
-        _brightness "$RED" 0
-        _brightness_full "$GREEN $BLUE"
+        if [ "$(board_name)" == "motorola,r14" ] ; then
+            _none_trigger "$GREEN"
+            _brightness_zero "$GREEN"
+            _brightness_full "$AMBER"
+            _netdev_link_trigger "$AMBER" eth1
+        else
+            led_actions_off
+            _shift_while _timer_trigger "$GREEN $BLUE"
+            _brightness_one "$GREEN $BLUE"
+            _blink "$GREEN $BLUE"
+            _brightness "$RED" 0
+            _brightness_full "$GREEN $BLUE"
+        fi
         _set_state "$LED_AGENT_DOWN"
     fi
 }
@@ -387,6 +464,12 @@ led_firmware_update() {
     if [ $(_is_new_state "$LED_FIRMWARE_UPDATE") -eq 0 ]; then
         if [ "$(board_name)" == "motorola,q14" ] ; then
             echo ZW_CODE_05 > /dev/ttyMSM1
+        elif [ "$(board_name)" == "motorola,r14" ] ; then
+            _none_trigger "$AMBER"
+            _brightness_zero "$AMBER"
+            _timer_trigger "$GREEN"
+            _rapidly_blink "$GREEN"
+            _brightness_full "$GREEN"
         else
             led_actions_off
             _shift_while _timer_trigger "$GREEN $BLUE"
@@ -394,8 +477,8 @@ led_firmware_update() {
             _rapidly_blink "$GREEN $BLUE"
             _brightness "$RED" 0
             _brightness_full "$GREEN $BLUE"
-            _set_state "$LED_FIRMWARE_UPDATE"
         fi
+        _set_state "$LED_FIRMWARE_UPDATE"
     fi
 }
 
@@ -404,6 +487,12 @@ led_factory_defaults() {
     if [ $(_is_new_state "$LED_FACTORY_DEFAULTS") -eq 0 ]; then
         if [ "$(board_name)" == "motorola,q14" ] ; then
 	    echo ZW_CODE_05 > /dev/ttyMSM1
+        elif [ "$(board_name)" == "motorola,r14" ] ; then
+            _none_trigger "$AMBER"
+            _brightness_zero "$AMBER"
+            _timer_trigger "$GREEN"
+            _rapidly_blink "$GREEN"
+            _brightness_full "$GREEN"
         else
             led_actions_off
             _shift_while _timer_trigger "$GREEN $BLUE"
@@ -411,20 +500,28 @@ led_factory_defaults() {
             _rapidly_blink "$GREEN $BLUE"
             _brightness "$RED" 0
             _brightness_full "$GREEN $BLUE"
-            _set_state "$LED_FACTORY_DEFAULTS"
         fi
+        _set_state "$LED_FACTORY_DEFAULTS"
     fi
 }
 
 # satellite connecting led sequence
 led_satellite_connecting() {
     if [ $(_is_new_state "$LED_SATELLITE_CONNECTING") -eq 0 ]; then
-        led_actions_off
-        _shift_while _timer_trigger "$GREEN $BLUE"
-        _brightness_one "$GREEN $BLUE"
-        _blink "$GREEN $BLUE"
-        _brightness "$RED" 0
-        _brightness_full "$GREEN $BLUE"
+        if [ "$(board_name)" == "motorola,r14" ] ; then
+            _none_trigger "$AMBER"
+            _brightness_zero "$AMBER"
+            _timer_trigger "$GREEN"
+            _blink "$GREEN"
+            _brightness_full "$GREEN"
+        else
+            led_actions_off
+            _shift_while _timer_trigger "$GREEN $BLUE"
+            _brightness_one "$GREEN $BLUE"
+            _blink "$GREEN $BLUE"
+            _brightness "$RED" 0
+            _brightness_full "$GREEN $BLUE"
+        fi
         _set_state "$LED_SATELLITE_CONNECTING"
     fi
 }
@@ -434,6 +531,12 @@ led_reboot() {
     if [ $(_is_new_state "$LED_REBOOT") -eq 0 ]; then
         if [ "$(board_name)" == "motorola,q14" ] ; then
 	    echo ZW_CODE_05 > /dev/ttyMSM1
+        elif [ "$(board_name)" == "motorola,r14" ] ; then
+            _none_trigger "$AMBER"
+            _brightness_zero "$AMBER"
+            _timer_trigger "$GREEN"
+            _blink "$GREEN"
+            _brightness_full "$GREEN"
         else
             led_actions_off
             _shift_while _timer_trigger "$GREEN $BLUE"
@@ -441,8 +544,8 @@ led_reboot() {
             _blink "$GREEN $BLUE"
             _brightness "$RED" 0
             _brightness_full "$GREEN $BLUE"
-            _set_state "$LED_AGENT_DOWN"
         fi
+        _set_state "$LED_AGENT_DOWN"
     fi
 }
 
@@ -457,10 +560,29 @@ led_actions_off() {
 # Turn the leds off
 led_off() {
     if [ $(_is_new_state "$LED_OFF") -eq 0 ]; then
-        _shift_while _none_trigger "$RED $GREEN $BLUE"
-        _brightness_zero "$RED $GREEN $BLUE"
+        if [ "$(board_name)" == "motorola,r14" ] ; then
+            _shift_while _none_trigger "$GREEN $AMBER $USB $WIFI_2G $WIFI_5G $POWER $LAN1 $LAN2 $LAN3 $LAN4"
+            _brightness_zero "$GREEN $AMBER $USB $WIFI_2G $WIFI_5G $POWER $LAN1 $LAN2 $LAN3 $LAN4"
+        else
+            _shift_while _none_trigger "$RED $GREEN $BLUE"
+            _brightness_zero "$RED $GREEN $BLUE"
+        fi
         _set_state "$LED_OFF"
     fi
+}
+
+# Blink wlan leds
+led_wps() {
+    _shift_while _timer_trigger "$WIFI_2G $WIFI_5G"
+    _blink "$WIFI_2G $WIFI_5G"
+    _brightness_full "$WIFI_2G $WIFI_5G"
+}
+
+# wlan leds on based on radio status
+led_wlan() {
+    _netdev_trigger "$WIFI_2G" wlan0
+    _netdev_trigger "$WIFI_5G" wlan1
+    _brightness_full "$WIFI_2G $WIFI_5G"
 }
 
 # A demo of the blink sequences
@@ -469,6 +591,16 @@ _demo() {
     echo "Starting LED Demo"
     led_switch "$LED_OFF"
     sleep 1
+
+    if [ "$(board_name)" == "motorola,r14" ] ; then
+        echo "$LED_WPS"
+        led_switch "$LED_WPS"
+        sleep 1
+
+        echo "$LED_WLAN"
+        led_switch "$LED_WLAN"
+        sleep 1
+    fi
 
     echo "$LED_FACTORY_DEFAULTS"
     led_switch "$LED_FACTORY_DEFAULTS"
@@ -522,6 +654,8 @@ led_switch() {
         $LED_SATELLITE_CONNECTING) led_satellite_connecting;;
         $LED_REBOOT) led_reboot;;
         $LED_OFF) led_off;;
+        $LED_WPS) led_wps;;
+        $LED_WLAN) led_wlan;;
         $LED_GET_STATE) _get_state;;
         _demo) led_off && _demo;;
         *) echo "$1 Action not recognized";;
