@@ -40,6 +40,9 @@ define Package/minim-openwifi-scripts/install
 	$(INSTALL_BIN) ./files/sbin/update_leds.sh $(1)/sbin
 	$(INSTALL_BIN) ./files/sbin/leds.sh $(1)/sbin
 
+	$(INSTALL_DIR) $(1)/etc/rc.button
+	$(INSTALL_BIN) ./files/etc/rc.button/lights_toggle $(1)/etc/rc.button
+
 endef
 
 $(eval $(call BuildPackage,minim-openwifi-scripts))

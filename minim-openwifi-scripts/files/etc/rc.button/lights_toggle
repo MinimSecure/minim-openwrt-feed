@@ -1,0 +1,17 @@
+#!/bin/sh
+
+[ "${ACTION}" = "released" ] || exit 0
+
+STATE=$(/sbin/leds.sh led_get_state)
+
+if [ "$STATE" = "led_off" ] ; then
+    # Reset leds to boot state
+    /sbin/leds.sh led_boot
+
+    # Restart update_leds to sync current status
+    /etc/init.d/update_leds restart
+else
+    /sbin/leds.sh led_off
+fi
+
+return 0
