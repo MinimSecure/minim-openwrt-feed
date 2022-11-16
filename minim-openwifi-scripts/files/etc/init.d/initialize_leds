@@ -1,0 +1,9 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2008-2021 OpenWrt.org
+
+START=50
+
+boot() {
+    /sbin/leds.sh led_boot
+}
+

@@ -34,6 +34,7 @@ define Package/minim-openwifi-scripts/install
 
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/etc/init.d/update_leds $(1)/etc/init.d
+	$(INSTALL_BIN) ./files/etc/init.d/initialize_leds $(1)/etc/init.d
 
 	$(INSTALL_DIR) $(1)/sbin
 	$(INSTALL_BIN) ./files/sbin/update_leds.sh $(1)/sbin
