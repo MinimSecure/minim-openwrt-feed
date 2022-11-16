@@ -2,12 +2,15 @@
 
 # this script updates the www template to add per device information for display on the landing page
 LANDING=/www/index.provisioned.html
-SERIAL=`cat /proc/environment/mfg_sn`
+SERIAL=`fw_printenv -n mfg_sn`
 if [ "$UNUM_FEATURE_CABLESTATUS_PIN_PRESENT" -eq "1" ]; then
-	MAC=`cat /proc/environment/mfg_cm_ethaddr`
+	MAC=`fw_printenv -n mfg_cm_ethaddr`
 else
-	MAC=`cat /proc/environment/ethaddr`
+	MAC=`fw_printenv -n ethaddr`
+	if [ -z "$MAC" ] ; then
+		MAC=`fw_printenv -n mfg_base_mac`
+	fi
 fi
-VERSION=`grep VERSION= /etc/os-release | cut -d= -f2 | tr -d \"`
+VERSION=`unum -v`
 sed -i -e "s/__SERIAL__/${SERIAL}/" -e "s/__MAC__/${MAC}/" -e "s/__VERSION__/${VERSION}/" ${LANDING}
 exit 0
