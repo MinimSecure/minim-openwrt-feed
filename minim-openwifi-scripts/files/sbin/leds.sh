@@ -96,6 +96,7 @@ readonly LED_ACTIONS_OFF="led_actions_off"
 readonly LED_OFF="led_off"
 readonly LED_WPS="led_wps"
 readonly LED_WLAN="led_wlan"
+readonly LED_WLAN_OFF="led_wlan_off"
 readonly LED_GET_STATE="led_get_state"
 # The following value is read from /etc/config/minim which in fact is set
 # from the server
@@ -585,6 +586,11 @@ led_wlan() {
     _brightness_full "$WIFI_2G $WIFI_5G"
 }
 
+led_wlan_off() {
+    _shift_while _none_trigger "$WIFI_2G $WIFI_5G"
+    _brightness_zero "$WIFI_2G $WIFI_5G"
+}
+
 # A demo of the blink sequences
 _demo() {
     
@@ -599,6 +605,10 @@ _demo() {
 
         echo "$LED_WLAN"
         led_switch "$LED_WLAN"
+        sleep 1
+
+        echo "$LED_WLAN_OFF"
+        led_switch "$LED_WLAN_OFF"
         sleep 1
     fi
 
@@ -656,6 +666,7 @@ led_switch() {
         $LED_OFF) led_off;;
         $LED_WPS) led_wps;;
         $LED_WLAN) led_wlan;;
+        $LED_WLAN_OFF) led_wlan_off;;
         $LED_GET_STATE) _get_state;;
         _demo) led_off && _demo;;
         *) echo "$1 Action not recognized";;
