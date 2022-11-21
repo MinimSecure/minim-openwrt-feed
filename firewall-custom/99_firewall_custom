@@ -1,0 +1,13 @@
+# Copyright (C) 2022 Minim Inc
+#
+# non standard firewall customisations to openwrt
+
+# firewall to drop, not reject
+uci set firewall.@defaults[0].forward="DROP"
+
+# commit changes
+uci commit
+sync
+
+# run always
+exit 1
