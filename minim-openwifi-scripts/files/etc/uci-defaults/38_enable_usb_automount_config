@@ -1,0 +1,5 @@
+# setting USB auto mount
+
+uci set fstab.@global[0].anon_mount=1
+
+
