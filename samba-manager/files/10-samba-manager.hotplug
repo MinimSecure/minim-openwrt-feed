@@ -1,0 +1,1 @@
+[ -z "{$DEVICE##*sd*}" ] && /etc/init.d/samba-manager restart

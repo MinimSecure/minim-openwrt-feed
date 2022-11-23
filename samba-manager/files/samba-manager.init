@@ -1,0 +1,116 @@
+#!/bin/sh /etc/rc.common
+. /lib/functions.sh
+. /usr/share/libubox/jshn.sh
+
+START=99
+STOP=90
+
+USE_PROCD=1
+
+section_del() {
+        uci delete $2.$1
+}
+
+# delete current samba config
+delete_samba_config() {
+	config_load samba4
+	config_foreach section_del samba samba4
+	config_foreach section_del sambashare samba4
+}
+
+# create new samba config
+generate_samba_config() {
+	local user=$1
+	local sharename=$2
+	local mount=$3
+
+	# remove current config
+	delete_samba_config
+	
+	uci add samba4 samba
+	uci set samba4.@samba[0].workgroup='WORKGROUP'
+	uci set samba4.@samba[0].charset='UTF-8'
+	uci set samba4.@samba[0].description='%h Storage Server'
+
+	uci add samba4 sambashare
+	uci set samba4.@sambashare[0].name=$sharename
+	uci set samba4.@sambashare[0].guest_ok='no'
+	uci set samba4.@sambashare[0].dir_mask='0777'
+	uci set samba4.@sambashare[0].read_only='no'
+	uci set samba4.@sambashare[0].path=$mount
+	uci set samba4.@sambashare[0].create_mask='0777'
+	uci set samba4.@sambashare[0].users=$user
+	uci commit samba4
+}
+
+# remove current samba user
+remove_samba_user() {
+	local user
+	for user in $(grep :SAMBA_USER: /etc/passwd | cut -d ':' -f 1) ; do
+		smbpasswd -x $user
+		sed -i "/^$user:/d" /etc/passwd
+	done
+}
+
+add_samba_user() {
+	local user=$1
+	local pass=$2
+
+	remove_samba_user
+
+	echo "$user:*:1000:65534:SAMBA_USER:/var:/bin/false" >> /etc/passwd
+	echo -ne "$pass\n$pass\n" | smbpasswd -a -s $user
+}
+
+get_mount() {
+	local mount_count=0
+	local mounted=""
+
+	json_load "$(ubus call block info)"
+	json_select "devices"
+	json_get_keys devs
+	for dev in $devs ; do
+		json_select "$dev"
+		json_get_vars mount
+		echo $mount | grep -q "/mnt/sd" && mount_count=$((mount_count + 1)) && mounted=$mount
+		json_select ..
+	done
+	[ $mount_count -eq 1 ] && echo $mounted
+}
+
+disable_samba() {
+	/etc/init.d/samba4 stop 2> /dev/null
+	/etc/init.d/samba4 disable
+	remove_samba_user
+	delete_samba_config
+	uci commit samba4
+}
+
+parse_config() {
+	local cfg="$1"
+	local username password enabled sharename
+	local mount=""
+
+	config_get enabled ${cfg} enabled
+	config_get username ${cfg} username
+	config_get password ${cfg} password
+	config_get sharename ${cfg} sharename
+
+	mount=$(get_mount)
+	if [ $enabled -eq 1 -a ! -z $mount ] ; then
+		add_samba_user $username $password
+		generate_samba_config $username $sharename $mount
+		/etc/init.d/samba4 enable
+		/etc/init.d/samba4 restart
+	else
+		disable_samba
+	fi
+}
+
+start_service() {
+	config_load minim
+	retval=$?
+	[ $retval -eq 0 ] && config_foreach parse_config samba
+	[ $retval -eq 1 ] && disable_samba
+}
+
