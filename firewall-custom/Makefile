@@ -28,7 +28,6 @@ endef
 define Package/minim-firewall-custom/install
 	$(INSTALL_DIR)                                  $(1)/etc/uci-defaults/
 	$(INSTALL_BIN)  99_firewall_custom.uci-defaults $(1)/etc/uci-defaults/
-	$(INSTALL_BIN)  99_firewall_custom.init.d       $(1)/etc/init.d/
+	$(INSTALL_BIN)  99firewallcustom.init.d         $(1)/etc/init.d/99firewallcustom
 endef
-
 $(eval $(call BuildPackage,minim-firewall-custom))
