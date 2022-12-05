@@ -14,19 +14,58 @@ uci -q set dhcp.odhcpd.loglevel=255
 # disable ULA addressing
 uci -q delete network.globals.ula_prefix
 
-# find the dhcp firewall entry for Allow-DHCPv6 and update it
+allow_dhcpv6_rule_found=0
+allow_icmpv6_input_rule_found=0
+allow_icmpv6_forward_rule_found=0
 ix=0
 while [ $ix -le 99 ] ; do
+   # find the dhcp firewall entry for Allow-DHCPv6 and update it
    name=`uci -q get firewall.@rule[$ix].name`
    [ $? -ne 0 ] && break
-
    if [ "$name" == "Allow-DHCPv6" ]; then
        uci -q set firewall.@rule[$ix].src_ip=""
-       break
+       allow_dhcpv6_rule_found=1
+   elif [ "$name" == "Allow-ICMPv6-Input" ]; then
+       allow_icmpv6_input_rule_found=1
+   elif [ "$name" == "Allow-ICMPv6-Forward" ]; then
+       allow_icmpv6_forward_rule_found=1
    fi
-
    ix=`expr $ix + 1`
 done
+
+if [ $allow_dhcpv6_rule_found -eq 0 ]; then
+    uci -q add firewall rule
+    uci -q set firewall.@rule[-1].dest_ip="fc00::/6"
+    uci -q set firewall.@rule[-1].dest_port="546"
+    uci -q set firewall.@rule[-1].family="ipv6"
+    uci -q set firewall.@rule[-1].name="Allow-DHCPv6"
+    uci -q set firewall.@rule[-1].proto="udp"
+    uci -q set firewall.@rule[-1].src="wan"
+    uci -q set firewall.@rule[-1].target="ACCEPT"
+fi
+
+if [ $allow_icmpv6_input_rule_found -eq 0 ]; then
+    uci -q add firewall rule
+    uci -q set firewall.@rule[-1].family="ipv6"
+    uci -q set firewall.@rule[-1].icmp_type="echo-request echo-reply destination-unreachable packet-too-big time-exceeded bad-header unknown-header-type router-solicitation neighbour-solicitation router-advertisement neighbour-advertisement"
+    uci -q set firewall.@rule[-1].limit="1000/sec"
+    uci -q set firewall.@rule[-1].name="Allow-ICMPv6-Input"
+    uci -q set firewall.@rule[-1].proto="icmp"
+    uci -q set firewall.@rule[-1].src="wan"
+    uci -q set firewall.@rule[-1].target="ACCEPT"
+fi
+
+if [ $allow_icmpv6_forward_rule_found -eq 0 ]; then
+    uci -q add firewall rule
+    uci -q set firewall.@rule[-1].dest="*"
+    uci -q set firewall.@rule[-1].family="ipv6"
+    uci -q set firewall.@rule[-1].icmp_type="echo-request echo-reply destination-unreachable packet-too-big time-exceeded bad-header unknown-header-type"
+    uci -q set firewall.@rule[-1].limit="1000/sec"
+    uci -q set firewall.@rule[-1].name="Allow-ICMPv6-Forward"
+    uci -q set firewall.@rule[-1].proto="icmp"
+    uci -q set firewall.@rule[-1].src="wan"
+    uci -q set firewall.@rule[-1].target="ACCEPT"
+fi
 
 # commit changes
 uci commit
