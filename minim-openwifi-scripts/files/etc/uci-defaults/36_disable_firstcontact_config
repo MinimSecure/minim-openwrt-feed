@@ -8,13 +8,20 @@ active=$(readlink  /etc/ucentral/ucentral.active)
 
 # We don't want to blow away the default wireless interfaces we created in
 # 31_default_wireless, so skip 99-ucentral-wifi (which does exactly that)
-rm /etc/uci-defaults/99-ucentral-wifi
+rm -f /etc/uci-defaults/99-ucentral-wifi
 
 # We also don't want to blow away the default openwrt network config,
 # so skip 99-ucentral-network (which does exactly that)
-rm /etc/uci-defaults/99-ucentral-network
+rm -f /etc/uci-defaults/99-ucentral-network
+
+# We also don't want to blow away the default openwrt uhttpd config,
+# so skip 99-ucentral-uhttpd (which does exactly that)
+rm -f /etc/uci-defaults/99-ucentral-uhttpd
 
 # No srsly, don't delete the network config
 sed -i '/rm \/etc\/config\/network/d' /etc/uci-defaults/zzz-ucentral
 
-exit 0
+# Don't overwrite the uhttpd, firewall, dhcp, and dropbear configs
+sed -i '/cp \/rom/d' /etc/uci-defaults/zzz-ucentral
+
+exit 1
