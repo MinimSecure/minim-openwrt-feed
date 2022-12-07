@@ -1,0 +1,22 @@
+#!/bin/sh
+#
+# This CGI script is called at the end of manufacture to verify that
+# devices are no longer in manufacturing mode.
+#
+MFG_PROVISIONED=0
+if [ -f /proc/environment/mfg_provisioned ] ; then
+    MFG_PROVISIONED=`cat  /proc/environment/mfg_provisioned`
+else
+    MFG_PROVISIONED=`fw_printenv -n mfg_provisioned`
+fi
+
+echo "Status: 200 OK"
+echo "Content-type: text/html"
+echo ""
+
+if [ "$MFG_PROVISIONED" -eq 1 ] ; then
+    echo "<h3>Customer Mode (Provisioned)</h3>"
+    echo "<!-- Download the app! -->"
+else
+   echo "<h1>Factory Mode (NOT Provisioned)</h1>"
+fi
