@@ -1,0 +1,6 @@
+# setting to upnp enable configuration
+
+uci set upnpd.config.enabled=1
+
+/etc/init.d/miniupnpd restart
+
