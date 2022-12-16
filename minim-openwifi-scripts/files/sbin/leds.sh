@@ -467,10 +467,10 @@ led_firmware_update() {
             echo ZW_CODE_05 > /dev/ttyMSM1
         elif [ "$(board_name)" == "motorola,r14" ] ; then
             _none_trigger "$AMBER"
-            _brightness_zero "$AMBER"
-            _timer_trigger "$GREEN"
-            _rapidly_blink "$GREEN"
-            _brightness_full "$GREEN"
+            _brightness_full "$AMBER"
+            _timer_trigger "$POWER"
+            _rapidly_blink "$POWER"
+            _brightness_full "$POWER"
         else
             led_actions_off
             _shift_while _timer_trigger "$GREEN $BLUE"
