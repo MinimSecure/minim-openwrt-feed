@@ -30,6 +30,7 @@ define Package/minim-modemrouter-support/install
 	$(INSTALL_BIN) BTN_0 $(1)/etc/rc.button/
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) update-cablestatus $(1)/etc/init.d/
+	$(INSTALL_BIN) modemrouter-mfg $(1)/etc/init.d/
 endef
 
 $(eval $(call HostBuild))

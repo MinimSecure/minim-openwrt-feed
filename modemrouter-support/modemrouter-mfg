@@ -1,0 +1,17 @@
+#!/bin/sh /etc/rc.common
+
+START=99
+
+start() {
+    # do nothing if provisioned
+    PROVISIONED=0
+    if [ -f /proc/environment/mfg_provisioned ] ; then
+       PROVISIONED=`cat /proc/environment/mfg_provisioned`
+    fi
+    [ $PROVISIONED -eq 1 ] && exit
+
+    # bridge the wan interface for manufacturing access to the modem
+    WAN=`uci get network.wan.ifname`
+    brctl addif br-lan $WAN
+}
+
