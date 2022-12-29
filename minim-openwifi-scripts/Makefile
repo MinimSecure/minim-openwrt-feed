@@ -32,6 +32,7 @@ define Package/minim-openwifi-scripts/install
 	$(INSTALL_DATA) ./files/etc/uci-defaults/36_disable_firstcontact_config $(1)/etc/uci-defaults
 	$(INSTALL_DATA) ./files/etc/uci-defaults/37_enable_flow_offloading $(1)/etc/uci-defaults
 	$(INSTALL_DATA) ./files/etc/uci-defaults/38_enable_usb_automount_config $(1)/etc/uci-defaults
+	$(INSTALL_DATA) ./files/etc/uci-defaults/39_enable_usteer_config $(1)/etc/uci-defaults
 
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/etc/init.d/update_leds $(1)/etc/init.d

@@ -1,0 +1,11 @@
+# settings for usteer configuration
+
+uci set usteer.@usteer[0].min_connect_snr=-60
+uci set usteer.@usteer[0].min_snr=-70
+uci set usteer.@usteer[0].band_steering_interval=3000
+uci set usteer.@usteer[0].band_steering_min_snr=-60
+uci set usteer.@usteer[0].assoc_steering=1
+uci commit usteer
+
+
+
