@@ -20,6 +20,7 @@ define Package/minim-web-landing
   SECTION:=minim
   CATEGORY:=Minim
   TITLE:=General purpose web-landing
+  DEPENDS:=+uhttpd
 endef
 
 define Build/Compile
