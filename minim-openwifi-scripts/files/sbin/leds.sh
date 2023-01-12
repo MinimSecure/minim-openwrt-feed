@@ -303,6 +303,7 @@ led_boot() {
             _default_on_trigger "$POWER"
             _brightness_full "$POWER"
             _usbport_trigger $USB usb1-port2
+            _usbport_trigger $USB usb2-port1
 	    _netdev_trigger "$LAN1" lan1
 	    _netdev_trigger "$LAN2" lan2
 	    _netdev_trigger "$LAN3" lan3
