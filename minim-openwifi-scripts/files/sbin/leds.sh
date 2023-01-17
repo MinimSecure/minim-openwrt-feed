@@ -98,6 +98,9 @@ readonly LED_WPS="led_wps"
 readonly LED_WLAN="led_wlan"
 readonly LED_WLAN_OFF="led_wlan_off"
 readonly LED_GET_STATE="led_get_state"
+readonly LED_USB_ON="led_usb_on"
+readonly LED_USB_OFF="led_usb_off"
+
 # The following value is read from /etc/config/minim which in fact is set
 # from the server
 BRIGHTNESS_THRESHOLD=255
@@ -302,8 +305,6 @@ led_boot() {
             _netdev_link_trigger "$AMBER" eth1
             _default_on_trigger "$POWER"
             _brightness_full "$POWER"
-            _usbport_trigger $USB usb1-port2
-            _usbport_trigger $USB usb2-port1
 	    _netdev_trigger "$LAN1" lan1
 	    _netdev_trigger "$LAN2" lan2
 	    _netdev_trigger "$LAN3" lan3
@@ -650,6 +651,14 @@ _demo() {
     led_switch "$LED_OFF"
 }
 
+led_usb_on() {
+    _brightness_full $USB  
+}
+
+led_usb_off() {
+    _brightness_zero $USB
+}
+
 # choose the sequence to run
 led_switch() {
     case "$1" in
@@ -667,6 +676,8 @@ led_switch() {
         $LED_WLAN) led_wlan;;
         $LED_WLAN_OFF) led_wlan_off;;
         $LED_GET_STATE) _get_state;;
+        $LED_USB_ON) led_usb_on;;
+        $LED_USB_OFF) led_usb_off;;
         _demo) led_off && _demo;;
         *) echo "$1 Action not recognized";;
     esac
