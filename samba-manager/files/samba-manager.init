@@ -114,16 +114,12 @@ start_service() {
 		count=$(echo $mount | wc -l) 
 		if [ $count -eq 1 ] ; then
 			/sbin/leds.sh led_usb_on
-		else
-			/sbin/leds.sh led_usb_off
-		fi
-
-		if [ $count -eq 1 ] ; then
 			config_load minim
 			retval=$?
 			[ $retval -eq 0 ] && config_foreach parse_config samba
 			[ $retval -eq 1 ] && disable_samba
 		else
+			/sbin/leds.sh led_usb_off
 			disable_samba
 		fi
 	else
