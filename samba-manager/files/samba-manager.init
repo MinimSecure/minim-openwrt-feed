@@ -96,8 +96,7 @@ parse_config() {
 	config_get password ${cfg} password
 	config_get sharename ${cfg} sharename
 
-	mount=$(get_mount)
-	if [ $enabled -eq 1 -a ! -z $mount ] ; then
+	if [ $enabled -eq 1 ] ; then
 		add_samba_user $username $password
 		generate_samba_config $username $sharename $mount
 		/etc/init.d/samba4 enable
@@ -108,9 +107,28 @@ parse_config() {
 }
 
 start_service() {
-	config_load minim
-	retval=$?
-	[ $retval -eq 0 ] && config_foreach parse_config samba
-	[ $retval -eq 1 ] && disable_samba
+	mount=$(get_mount)
+	if [ -n "$mount" ] ; then
+		#adding the following code because mount variable contains the string of mounted devices.
+		#so the following code is counting the number of devices. 
+		count=$(echo $mount | wc -l) 
+		if [ $count -eq 1 ] ; then
+			/sbin/leds.sh led_usb_on
+		else
+			/sbin/leds.sh led_usb_off
+		fi
+
+		if [ $count -eq 1 ] ; then
+			config_load minim
+			retval=$?
+			[ $retval -eq 0 ] && config_foreach parse_config samba
+			[ $retval -eq 1 ] && disable_samba
+		else
+			disable_samba
+		fi
+	else
+		/sbin/leds.sh led_usb_off
+		disable_samba
+	fi
 }
 

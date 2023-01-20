@@ -652,6 +652,7 @@ _demo() {
 }
 
 led_usb_on() {
+    _default_on_trigger $USB
     _brightness_full $USB  
 }
 
