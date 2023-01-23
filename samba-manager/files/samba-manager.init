@@ -109,19 +109,11 @@ parse_config() {
 start_service() {
 	mount=$(get_mount)
 	if [ -n "$mount" ] ; then
-		#adding the following code because mount variable contains the string of mounted devices.
-		#so the following code is counting the number of devices. 
-		count=$(echo $mount | wc -l) 
-		if [ $count -eq 1 ] ; then
 			/sbin/leds.sh led_usb_on
 			config_load minim
 			retval=$?
 			[ $retval -eq 0 ] && config_foreach parse_config samba
 			[ $retval -eq 1 ] && disable_samba
-		else
-			/sbin/leds.sh led_usb_off
-			disable_samba
-		fi
 	else
 		/sbin/leds.sh led_usb_off
 		disable_samba
