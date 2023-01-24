@@ -90,6 +90,7 @@ parse_config() {
 	local cfg="$1"
 	local username password enabled sharename
 	local mount=""
+	mount=$(get_mount)
 
 	config_get enabled ${cfg} enabled
 	config_get username ${cfg} username
