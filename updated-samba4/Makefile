@@ -1,7 +1,7 @@
 # Based partially on (wongsyrone/hbl0307106015) versions
 include $(TOPDIR)/rules.mk
 
-PKG_NAME:=updated-samba
+PKG_NAME:=samba
 PKG_VERSION:=4.17.2
 PKG_RELEASE:=$(AUTORELEASE)
 
