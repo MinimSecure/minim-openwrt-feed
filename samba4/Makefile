@@ -44,8 +44,8 @@ include ../../lang/python/python3-package.mk
 include ../../lang/perl/perlver.mk
 
 define Package/samba4/Default
-  SECTION:=net
-  CATEGORY:=Network
+  SECTION:=minim
+  CATEGORY:=Minim
   TITLE:=Samba $(PKG_VERSION)
   URL:=https://www.samba.org/
 endef
