@@ -18,7 +18,7 @@ define Package/samba-manager
   DEPENDS:=+blockd +kmod-usb-storage +kmod-usb-storage-uas \
            +kmod-fuse +kmod-fs-f2fs +kmod-fs-exfat \
            +kmod-fs-vfat +kmod-fs-ext4 +kmod-fs-ntfs \
-           +kmod-fs-hfs +kmod-fs-hfsplus +samba4-server
+           +kmod-fs-hfs +kmod-fs-hfsplus
 endef
 
 define Package/samba-manager/description
