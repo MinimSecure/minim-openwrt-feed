@@ -23,6 +23,7 @@ generate_samba_config() {
 	local user=$1
 	local sharename=$2
 	local mount=$3
+	local guest=$4
 
 	# remove current config
 	delete_samba_config
@@ -34,12 +35,14 @@ generate_samba_config() {
 
 	uci add samba4 sambashare
 	uci set samba4.@sambashare[0].name=$sharename
-	uci set samba4.@sambashare[0].guest_ok='no'
+	uci set samba4.@sambashare[0].guest_ok=$guest
 	uci set samba4.@sambashare[0].dir_mask='0777'
 	uci set samba4.@sambashare[0].read_only='no'
 	uci set samba4.@sambashare[0].path=$mount
 	uci set samba4.@sambashare[0].create_mask='0777'
-	uci set samba4.@sambashare[0].users=$user
+	if [ $guest = "no" ] ; then
+		uci set samba4.@sambashare[0].users=$user
+	fi
 	uci commit samba4
 }
 
@@ -89,6 +92,7 @@ disable_samba() {
 parse_config() {
 	local cfg="$1"
 	local username password enabled sharename
+	local guest="no"
 	local mount=""
 	mount=$(get_mount)
 
@@ -98,8 +102,11 @@ parse_config() {
 	config_get sharename ${cfg} sharename
 
 	if [ $enabled -eq 1 ] ; then
+		if [ -z "$password" ] ; then
+			guest="yes"
+		fi
 		add_samba_user $username $password
-		generate_samba_config $username $sharename $mount
+		generate_samba_config $username $sharename $mount $guest
 		/etc/init.d/samba4 enable
 		/etc/init.d/samba4 restart
 	else
