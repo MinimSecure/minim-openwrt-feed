@@ -590,9 +590,14 @@ led_wps() {
 
 # wlan leds on based on radio status
 led_wlan() {
-    _netdev_trigger "$WIFI_2G" wlan0
-    _netdev_trigger "$WIFI_5G" wlan1
-    _brightness_full "$WIFI_2G $WIFI_5G"
+	if [ "$(board_name)" == "motorola,q14" ] ; then
+		led_switch "$LED_BOOT" 
+		/etc/init.d/update_leds restart
+        else
+	    _netdev_trigger "$WIFI_2G" wlan0
+	    _netdev_trigger "$WIFI_5G" wlan1
+	    _brightness_full "$WIFI_2G $WIFI_5G"
+	fi
 }
 
 led_wlan_off() {
