@@ -561,7 +561,7 @@ led_actions_off() {
 # Turn the leds off
 led_off() {
     if [ $(_is_new_state "$LED_OFF") -eq 0 ]; then
-	 if [ "$(board_name)" == "motorola,r14" ] ; then
+	if [ "$(board_name)" == "motorola,r14" ] ; then
             _shift_while _none_trigger "$GREEN $AMBER $USB $WIFI_2G $WIFI_5G $POWER $LAN1 $LAN2 $LAN3 $LAN4"
             _brightness_zero "$GREEN $AMBER $USB $WIFI_2G $WIFI_5G $POWER $LAN1 $LAN2 $LAN3 $LAN4"
         else
