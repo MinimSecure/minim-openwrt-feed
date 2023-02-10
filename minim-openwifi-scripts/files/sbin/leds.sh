@@ -561,7 +561,7 @@ led_actions_off() {
 # Turn the leds off
 led_off() {
     if [ $(_is_new_state "$LED_OFF") -eq 0 ]; then
-        if [ "$(board_name)" == "motorola,r14" ] ; then
+	if [ "$(board_name)" == "motorola,r14" ] ; then
             _shift_while _none_trigger "$GREEN $AMBER $USB $WIFI_2G $WIFI_5G $POWER $LAN1 $LAN2 $LAN3 $LAN4"
             _brightness_zero "$GREEN $AMBER $USB $WIFI_2G $WIFI_5G $POWER $LAN1 $LAN2 $LAN3 $LAN4"
         else
@@ -574,16 +574,30 @@ led_off() {
 
 # Blink wlan leds
 led_wps() {
-    _shift_while _timer_trigger "$WIFI_2G $WIFI_5G"
-    _blink "$WIFI_2G $WIFI_5G"
-    _brightness_full "$WIFI_2G $WIFI_5G"
+	if [ "$(board_name)" == "motorola,q14" ] ; then
+            led_actions_off
+            _shift_while _timer_trigger "$BLUE"
+            _brightness_one "$BLUE"
+            _blink "$BLUE"
+            _brightness "$RED $GREEN" 0
+            _brightness_full "$BLUE"
+        else
+	    _shift_while _timer_trigger "$WIFI_2G $WIFI_5G"
+	    _blink "$WIFI_2G $WIFI_5G"
+	    _brightness_full "$WIFI_2G $WIFI_5G"
+	fi
 }
 
 # wlan leds on based on radio status
 led_wlan() {
-    _netdev_trigger "$WIFI_2G" wlan0
-    _netdev_trigger "$WIFI_5G" wlan1
-    _brightness_full "$WIFI_2G $WIFI_5G"
+	if [ "$(board_name)" == "motorola,q14" ] ; then
+		led_boot
+		/etc/init.d/update_leds restart
+        else
+	    _netdev_trigger "$WIFI_2G" wlan0
+	    _netdev_trigger "$WIFI_5G" wlan1
+	    _brightness_full "$WIFI_2G $WIFI_5G"
+	fi
 }
 
 led_wlan_off() {
@@ -646,6 +660,10 @@ _demo() {
     
     echo "$LED_REBOOT"
     led_switch "$LED_REBOOT"
+    sleep 5
+ 
+    echo "$LED_WPS"
+    led_switch "$LED_WPS"
     sleep 5
 
     led_switch "$LED_OFF"
