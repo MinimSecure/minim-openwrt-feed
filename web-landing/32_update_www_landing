@@ -13,4 +13,4 @@ else
 fi
 VERSION=`unum -v`
 sed -i -e "s/__SERIAL__/${SERIAL}/" -e "s/__MAC__/${MAC}/" -e "s/__VERSION__/${VERSION}/" ${LANDING}
-exit 0
+exit 1
