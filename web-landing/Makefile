@@ -40,7 +40,7 @@ define Package/minim-web-landing/install
 	$(INSTALL_DATA) styles/style.css         $(1)/www/styles/
 
 	$(INSTALL_DIR)                            $(1)/etc/uci-defaults/
-	$(INSTALL_BIN)  31_update_www_landing     $(1)/etc/uci-defaults/
+	$(INSTALL_BIN)  32_update_www_landing     $(1)/etc/uci-defaults/
 	$(INSTALL_BIN)  31_update_www_provisioned $(1)/etc/uci-defaults/
 endef
 
