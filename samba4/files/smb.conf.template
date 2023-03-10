@@ -48,7 +48,7 @@
 	## The only reasonable values for this parameter are 0 (no async I/O) and 1 (always do async I/O).
 	## (1/0)
 	#aio read size = 0
-	#aio write size = 0
+	aio write size = 0
 
 	## If Samba has been built with asynchronous I/O support, Samba will not wait until write requests are finished before returning the result to the client for files listed in this parameter.
 	## Instead, Samba will immediately return that the write request has been finished successfully, no matter if the operation will succeed or not.
