@@ -1,0 +1,24 @@
+# Copyright (C) 2023 Minim, Inc.
+
+. /lib/functions.sh
+
+smp_packet_steering_minim_r14() {
+  uci add_list minim.@smp_packet_steering[0].irqs="120:8"
+  uci add_list minim.@smp_packet_steering[0].irqs="121:4"
+}
+
+
+uci delete minim.@smp_packet_steering[0]
+uci add minim smp_packet_steering
+
+case $(board_name) in
+        motorola,r14)
+              uci add_list minim.@smp_packet_steering[0].irqs="120:8"
+              uci add_list minim.@smp_packet_steering[0].irqs="121:4"
+        ;;
+esac
+
+uci commit
+
+# run always
+exit 1
