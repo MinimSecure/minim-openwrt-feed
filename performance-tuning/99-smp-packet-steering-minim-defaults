@@ -7,6 +7,7 @@ smp_packet_steering_minim_r14() {
   uci add_list minim.@smp_packet_steering[0].irqs="121:4"
 }
 
+[ -f /etc/config/minim ] || touch /etc/config/minim
 
 uci delete minim.@smp_packet_steering[0]
 uci add minim smp_packet_steering
