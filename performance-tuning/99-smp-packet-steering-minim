@@ -1,0 +1,21 @@
+#!/bin/sh
+[ "$ACTION" = add ] || exit
+
+NPROCS="$(grep -c "^processor.*:" /proc/cpuinfo)"
+[ "$NPROCS" -gt 1 ] || exit
+
+PROC_MASK="$(( (1 << $NPROCS) - 1 ))"
+
+# root@r14-78ac:~# uci get minim.@smp_packet_steering[0].irqs
+# 120:8 121:4
+
+irqs="$(uci get "minim.@smp_packet_steering[0].irqs")"
+[ $? -ne 0 ] && exit 0
+
+for irq in $irqs ; do
+  irq_number=$(echo $irq | cut -d: -f1)
+  irq_affinity=$(echo $irq | cut -d: -f2)
+  [ -d /proc/irq/$irq_number ] || continue
+  echo $irq_affinity > /proc/irq/$irq_number/smp_affinity
+done
+
