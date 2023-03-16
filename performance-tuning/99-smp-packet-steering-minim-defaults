@@ -16,6 +16,7 @@ case $(board_name) in
         motorola,r14)
               uci add_list minim.@smp_packet_steering[0].irqs="120:8"
               uci add_list minim.@smp_packet_steering[0].irqs="121:4"
+              uci add_list minim.@smp_packet_steering[0].irqs="123:2"
         ;;
 esac
 
