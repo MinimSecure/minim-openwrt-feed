@@ -1,10 +1,49 @@
 #!/bin/sh
+. /lib/functions.sh
+. /lib/functions/system.sh
 
 AGENT_STATUS_UP_LED_FILE=/tmp/agent_status_up_led
 
 opmode=`/sbin/uci -q get minim.@unum[-1].opmode`
 
 INIT=2
+
+get_root_port() {
+	echo -ne 0x ; cat /sys/class/net/br-lan/bridge/root_port
+}
+
+get_port_num() {
+	intf=$1
+	cat /sys/class/net/$intf/brport/port_no
+}
+
+get_connection_type() {
+	# default to wireless
+	root=wireless
+
+	# get per board list of ethernet ports
+	case $(board_name) in
+	motorola,r14)
+		ethernet_ports="eth1 lan1 lan2 lan3 lan4"
+		;;
+	*)
+		ethernet_ports="eth0 eth1"
+		;;
+	esac
+
+	# get bridge root port number
+	root_port=$(get_root_port)
+
+	# compare bridge root port number with ethernet port numbers
+	for port in $ethernet_ports ; do
+		if [ "$root_port" = "$(get_port_num $port)" ] ; then
+			root=ethernet
+			break
+		fi
+	done
+
+	echo $root
+}
 
 agent_status_curr=0
 agent_status_prev=$INIT
@@ -38,20 +77,28 @@ do
     else
         # repeater
 
-        # read and evaluate rssi
-        rssi=`iwinfo wlan1 info | grep Signal | awk '{print $2}' 2>/dev/null`
-        if [ "$rssi" == "" ]; then
-            # Some error while getting RSSI
-            sleep 1
-            continue
-        fi
-        # add hysteresis
-        if [ $rssi -ge -65 -a $rssi_status_ok_prev -ne 1 ]; then
-            # now greater than threshold and was not ok before
+        # figure out if we are connected via ethernet or wireless
+        connection_type=$(get_connection_type)
+        if [ "$connection_type" = "ethernet" ] ; then
+            # for ethernet, set led status to ok
             rssi_status_ok_curr=1
-        elif [ $rssi -le -69 -a $rssi_status_ok_prev -ne 0 ]; then
-            # now less than threshold and was ok before
-            rssi_status_ok_curr=0
+        else
+            # read and evaluate rssi
+            rssi=`iwinfo wlan1 info | grep Signal | awk '{print $2}' 2>/dev/null`
+            if [ "$rssi" == "" ]; then
+                # Some error while getting RSSI
+                sleep 1
+                continue
+            fi
+
+            # add hysteresis
+            if [ $rssi -ge -65 -a $rssi_status_ok_prev -ne 1 ]; then
+                # now greater than threshold and was not ok before
+                rssi_status_ok_curr=1
+            elif [ $rssi -le -69 -a $rssi_status_ok_prev -ne 0 ]; then
+                # now less than threshold and was ok before
+                rssi_status_ok_curr=0
+            fi
         fi
 
         # act only on change
