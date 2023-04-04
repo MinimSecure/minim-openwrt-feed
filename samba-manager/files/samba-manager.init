@@ -51,7 +51,8 @@ remove_samba_user() {
 	local user
 	for user in $(grep :SAMBA_USER: /etc/passwd | cut -d ':' -f 1) ; do
 		smbpasswd -x $user
-		sed -i "/^$user:/d" /etc/passwd
+		deluser $user
+		sync
 	done
 }
 
@@ -61,7 +62,8 @@ add_samba_user() {
 
 	remove_samba_user
 
-	echo "$user:*:1000:65534:SAMBA_USER:/var:/bin/false" >> /etc/passwd
+	adduser -h /var -s /bin/false -G nogroup -H -D -u 1000 -g "SAMBA_USER" $user
+	sync
 	echo -ne "$pass\n$pass\n" | smbpasswd -a -s $user
 }
 
