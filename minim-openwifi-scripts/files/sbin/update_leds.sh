@@ -9,7 +9,36 @@ opmode=`/sbin/uci -q get minim.@unum[-1].opmode`
 INIT=2
 
 get_root_port() {
-	echo -ne 0x ; cat /sys/class/net/br-lan/bridge/root_port
+    # find default gateway
+    firstline=1
+    for entry in `sed -e 's/\s/_/g' < /proc/net/route `; do
+        [ $firstline -eq 1 ] && firstline=0 && continue
+        flags=`echo $entry | awk -F_ '{print $4}'`
+        default=$(( $flags & 3 ))
+        [ $default -eq 3 ] || continue
+        ip_hex=`echo $entry | awk -F_ '{print $3}'`
+        break
+    done
+
+    # convert to decimal
+    ip_hex_4="0x"`echo $ip_hex | cut -c 1-2`
+    ip_4=$(( $ip_hex_4 ))
+    ip_hex_3="0x"`echo $ip_hex | cut -c 3-4`
+    ip_3=$(( $ip_hex_3 ))
+    ip_hex_2="0x"`echo $ip_hex | cut -c 5-6`
+    ip_2=$(( $ip_hex_2 ))
+    ip_hex_1="0x"`echo $ip_hex | cut -c 7-8`
+    ip_1=$(( $ip_hex_1 ))
+
+    ip="$ip_1.$ip_2.$ip_3.$ip_4"
+
+    # find matching mac address (of gateway)
+    mac=`cat /proc/net/arp | grep $ip | tr -s " " | sed -e 's/\s/_/g' | cut -d_ -f 4`
+
+    # find switch port on which mac was found
+    port=`brctl showmacs br-lan | grep $mac | tr -s " " | sed -e 's/\s/_/g' | cut -d_ -f 2`
+
+    echo 0x$port
 }
 
 get_port_num() {
