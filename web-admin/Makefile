@@ -36,8 +36,6 @@ define Package/minim-web-admin/install
 	$(INSTALL_DIR) $(1)/www/cgi-bin/luci/admin/minim
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/web_admin $(1)/www/cgi-bin/luci/admin/minim
 	$(LN) --symbolic --relative $(1)/www/cgi-bin/luci/admin/minim/web_admin $(1)/www/cgi-bin/luci/admin/minim/unprov
-	$(LN) --symbolic --relative $(1)/www/cgi-bin/luci/admin/minim/web_admin $(1)/www/cgi-bin/luci/admin/minim/start_sshd
-	$(LN) --symbolic --relative $(1)/www/cgi-bin/luci/admin/minim/web_admin $(1)/www/cgi-bin/luci/admin/minim/enable_sshd
 	$(INSTALL_BIN) mode_check $(1)/www/cgi-bin/luci/admin/minim
 	$(INSTALL_DATA) enable_sshd.html $(1)/www
 	$(INSTALL_DATA) start_sshd.html $(1)/www
