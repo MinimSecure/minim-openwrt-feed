@@ -21,6 +21,8 @@ endef
 define Package/crash-collector/install
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) files/crash-collector.init $(1)/etc/init.d/crash-collector
+	$(INSTALL_DIR) $(1)/sbin
+	$(INSTALL_BIN) files/upload_crash_to_s3.sh $(1)/sbin/upload_crash_to_s3.sh
 endef
 
 $(eval $(call BuildPackage,crash-collector))
