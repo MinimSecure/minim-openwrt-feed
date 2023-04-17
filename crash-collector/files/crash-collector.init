@@ -5,11 +5,22 @@ START=99
 STOP=99
 
 boot() {
+	today=`date '+%Y_%m_%d__%H_%M_%S'`;
+	filename="/etc/config/crash/crashlog-$today.gz";
+
 	if [ -f /sys/kernel/debug/crashlog ] ; then
-            today=`date '+%Y_%m_%d__%H_%M_%S'`;
-            filename="/etc/config/crash/crashlog-$today.gz";
             mkdir -p /etc/config/crash
             cat /sys/kernel/debug/crashlog | gzip > $filename
+            logger -t crash-collector Saving kernel crash log $filename
+	fi
+
+	if [ -f /sys/fs/pstore/dmesg-ramoops-* ] ; then
+            mkdir -p /etc/config/crash
+            cat /sys/fs/pstore/dmesg-ramoops-* | gzip > $filename
+            rm /sys/fs/pstore/dmesg-ramoops-*
+	fi
+
+	if [ -f $filename ] ; then
             logger -t crash-collector Saving kernel crash log $filename
 
             # only keep the latest 5 logs
