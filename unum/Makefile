@@ -14,13 +14,14 @@
 
 include $(TOPDIR)/rules.mk
 
+LATEST_UNUM:=$(shell git ls-remote https://github.com/minimsecure/unum-sdk master | cut -f1)
+
 PKG_NAME:=unum
-PKG_VERSION:=v2
 PKG_LICENSE:=Apache-2.0
 
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_VERSION:=b55a1d5021664120645c5deb133bda7e7a643ec7
-PKG_MIRROR_HASH:=f46ee1a9b40b0c6d110dc7f3e6a67e8e9c55437a40b81c404000666c52839555
+PKG_SOURCE_VERSION:=$(LATEST_UNUM)
+PKG_MIRROR_HASH:=skip
 PKG_SOURCE_URL:=https://github.com/MinimSecure/unum-sdk
 PKG_MAINTAINER:=Minim Labs <labs@minim.co>
 
