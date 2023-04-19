@@ -14,7 +14,7 @@ boot() {
             logger -t crash-collector Saving kernel crash log $filename
 	fi
 
-	if [ -f /sys/fs/pstore/dmesg-ramoops-* ] ; then
+	if [ -f /sys/fs/pstore/dmesg-ramoops-0 ] ; then
             mkdir -p /etc/config/crash
             cat /sys/fs/pstore/dmesg-ramoops-* | gzip > $filename
             rm /sys/fs/pstore/dmesg-ramoops-*
