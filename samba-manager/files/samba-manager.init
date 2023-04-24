@@ -77,7 +77,18 @@ get_mount() {
 	for dev in $devs ; do
 		json_select "$dev"
 		json_get_vars mount
-		echo $mount | grep -q "/mnt/sd" && mount_count=$((mount_count + 1)) && mounted=$mount
+		# Process /mnt/sd partitions only
+		[ "$mount" == "" ] && json_select .. && continue
+		currentpartbase=`echo $mount | cut -c 0-7`
+		[ "$currentpartbase" != "/mnt/sd" ] && json_select .. && continue
+
+		# Multiple disks vs multiple partitions
+		# Get the partition basenames (/mnt/sda or /mnt/sdb etc) for the partitions
+		# If they are not the same, we have multiple disks
+		[ "$mounted" != "" ] && mountedpart=`echo $mounted | cut -c 0-8`
+		currentpart=`echo $mount | cut -c 0-8`
+		[ "$mounted" != "" ] && [ "$mountedpart" != "$currentpart" ] && mount_count=$((mount_count + 1)) && break
+		[ "$mounted" == "" ] && echo $mount | grep -q "/mnt/sd" && mount_count=$((mount_count + 1)) && mounted=$mount
 		json_select ..
 	done
 	[ $mount_count -eq 1 ] && echo $mounted
