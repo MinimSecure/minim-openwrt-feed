@@ -5,10 +5,10 @@
 
 filename=$1
 upload=`basename $filename`
-mac=`fw_printenv -n ethaddr | tr '[A-F]' '[a-f]'`
+mac=`fw_printenv -n mfg_base_mac | tr '[A-F]' '[a-f]'`
 
 if [ -z $mac ] ; then
-	mac=`fw_printenv -n mfg_base_mac | tr '[A-F]' '[a-f]'`
+	mac=`fw_printenv -n ethaddr | tr '[A-F]' '[a-f]'`
 fi
 
 if [ -z $mac ] ; then
