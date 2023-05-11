@@ -12,5 +12,6 @@ else
 	fi
 fi
 VERSION=`unum -v`
+cp "/rom${LANDING}" ${LANDING}
 sed -i -e "s/__SERIAL__/${SERIAL}/" -e "s/__MAC__/${MAC}/" -e "s/__VERSION__/${VERSION}/" ${LANDING}
 exit 1
