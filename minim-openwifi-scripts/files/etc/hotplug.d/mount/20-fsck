@@ -1,0 +1,38 @@
+#!/bin/sh
+
+# cleanup on remove
+[ $ACTION == "remove" ] && rm -f /tmp/$DEVICE.repaired && exit
+
+# only process devices being added
+[ $ACTION == "add" ] || exit
+
+# hfs only at this time
+fstype=`cat /proc/mounts | grep "/dev/$DEVICE" | awk '{print $3}'`
+[ "$fstype" == "hfs" -o "$fstype" == "hfsplus" ] || exit
+
+# determine if the device is mounted read only, continue only if so
+cat /proc/mounts | grep "/dev/$DEVICE" | awk '{print $4}' | grep "rw,"
+readonly=$?
+[ $readonly -eq 1 ] || exit
+
+# if we have already repaired the device then exit
+[ -f /tmp/$DEVICE.repaired ] && exit
+
+logger "20-fsck: repairing $DEVICE"
+
+# umount, repair and remount
+umount /dev/$DEVICE
+case $fstype in
+    hfs)
+        fsck.hfs /dev/$DEVICE
+        ;;
+    hfsplus)
+        fsck.hfsplus /dev/$DEVICE
+        ;;
+    *)
+        ;;
+esac
+block mount
+
+# flag repair to prevent a second attempt
+touch /tmp/$DEVICE.repaired

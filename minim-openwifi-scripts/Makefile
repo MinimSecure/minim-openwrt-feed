@@ -45,6 +45,8 @@ define Package/minim-openwifi-scripts/install
 	$(INSTALL_DIR) $(1)/etc/rc.button
 	$(INSTALL_BIN) ./files/etc/rc.button/lights_toggle $(1)/etc/rc.button
 
+	$(INSTALL_DIR) $(1)/etc/hotplug.d/mount
+	$(INSTALL_BIN) ./files/etc/hotplug.d/mount/20-fsck $(1)/etc/hotplug.d/mount
 endef
 
 $(eval $(call BuildPackage,minim-openwifi-scripts))
